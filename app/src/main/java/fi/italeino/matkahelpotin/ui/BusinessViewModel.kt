@@ -55,6 +55,9 @@ class BusinessViewModel(
         if (routes.isEmpty()) return
         if (routes.zipWithNext().any { (current, next) -> current.toPlaceId != next.fromPlaceId }) return
         if (routes.any { it.distanceMeters < 0L }) return
+        // Phase 3 routes are employer-defined. Calculated/manual routes use the
+        // explicit routing APIs so their provenance cannot be lost here.
+        if (routes.any { it.source != RouteSource.EMPLOYER_DEFINED }) return
 
         viewModelScope.launch {
             val tripId = UUID.randomUUID()
