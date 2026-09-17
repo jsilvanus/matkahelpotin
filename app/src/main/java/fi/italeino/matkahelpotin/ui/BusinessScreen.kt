@@ -59,6 +59,12 @@ fun BusinessScreen(viewModel: BusinessViewModel) {
                     val monthlyMeters = legs.filter { leg -> trips.any { it.id == leg.businessTripId && it.date >= monthStart && it.date < monthEnd && it.employmentId == employmentId } }.sumOf { it.distanceMeters }
                     Text("Week total: ${"%.1f".format(weeklyMeters / 1000.0)} km")
                     Text("Month total (${monthStart.monthValue}/${monthStart.year}): ${"%.1f".format(monthlyMeters / 1000.0)} km")
+                    val annualMeters = calculateAnnualMileageMeters(trips, legs, weekStart.year, employmentId)
+                    val annualPolicy = trips.filter { it.employmentId == employmentId && it.date.year == weekStart.year }
+                        .mapNotNull { it.mileageLimitMetersSnapshot }.firstOrNull()
+                    val remaining = remainingMileageMeters(annualMeters, annualPolicy)
+                    Text("Annual mileage: ${"%.1f".format(annualMeters / 1000.0)} km")
+                    annualPolicy?.let { Text("Annual limit: ${"%.1f".format(it / 1000.0)} km; remaining: ${"%.1f".format((remaining ?: 0L) / 1000.0)} km") }
                 }
                 BusinessMode.HISTORY -> BusinessHistory(trips, legs, placeNames, employmentId!!)
                 BusinessMode.SETUP -> BusinessSetup(viewModel, selectedEmployment!!, places, locations, routes, placeNames)
