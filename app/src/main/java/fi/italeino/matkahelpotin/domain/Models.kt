@@ -266,13 +266,16 @@ fun selectReimbursementRate(rates: List<ReimbursementRate>, date: LocalDate, typ
 fun selectMileagePolicy(policies: List<MileagePolicy>, date: LocalDate, jurisdiction: String = "FI"): MileagePolicy? =
     policies.filter { it.jurisdiction == jurisdiction && it.year == date.year }.maxByOrNull { it.id }
 
-fun BusinessTrip.withPolicySnapshot(reimbursementRate: ReimbursementRate?, mileagePolicy: MileagePolicy?): BusinessTrip = copy(
-    reimbursementRateIdSnapshot = reimbursementRate?.id,
-    reimbursementRateCentsPerKmSnapshot = reimbursementRate?.takeIf { it.unit == "km" }?.amountCents,
-    mileagePolicyIdSnapshot = mileagePolicy?.id,
-    mileageRateCentsPerKmSnapshot = mileagePolicy?.mileageRateCentsPerKm,
-    mileageLimitMetersSnapshot = mileagePolicy?.mileageLimitMeters,
-)
+fun BusinessTrip.withPolicySnapshot(reimbursementRate: ReimbursementRate?, mileagePolicy: MileagePolicy?): BusinessTrip {
+    if (transportMode != TransportMode.PRIVATE_CAR) return this
+    return copy(
+        reimbursementRateIdSnapshot = reimbursementRate?.id,
+        reimbursementRateCentsPerKmSnapshot = reimbursementRate?.takeIf { it.unit == "km" }?.amountCents,
+        mileagePolicyIdSnapshot = mileagePolicy?.id,
+        mileageRateCentsPerKmSnapshot = mileagePolicy?.mileageRateCentsPerKm,
+        mileageLimitMetersSnapshot = mileagePolicy?.mileageLimitMeters,
+    )
+}
 
 fun calculateReimbursementCents(distanceMeters: Long, rateCentsPerKm: Long): Long {
     require(distanceMeters >= 0)
