@@ -96,6 +96,11 @@ data class BusinessTrip(
     val employmentId: EntityId,
     val purpose: String? = null,
     val transportMode: TransportMode = TransportMode.PRIVATE_CAR,
+    val reimbursementRateIdSnapshot: EntityId? = null,
+    val reimbursementRateCentsPerKmSnapshot: Long? = null,
+    val mileagePolicyIdSnapshot: EntityId? = null,
+    val mileageRateCentsPerKmSnapshot: Long? = null,
+    val mileageLimitMetersSnapshot: Long? = null,
     val createdAt: Instant = Instant.now(),
 )
 
@@ -252,3 +257,30 @@ fun businessTripLegFromRouting(
         calculatedDistanceProvider = result.provider,
         transportMode = transportMode,
     ).also(::validateBusinessTripLeg)
+
+
+fun selectReimbursementRate(rates: List<ReimbursementRate>, date: LocalDate, type: String = "KM", jurisdiction: String = "FI"): ReimbursementRate? =
+    rates.filter { it.type == type && it.jurisdiction == jurisdiction && !date.isBefore(it.validFrom) && (it.validUntil == null || date.isBefore(it.validUntil)) }
+        .maxByOrNull { it.validFrom }
+
+fun selectMileagePolicy(policies: List<MileagePolicy>, date: LocalDate, jurisdiction: String = "FI"): MileagePolicy? =
+    policies.filter { it.jurisdiction == jurisdiction && it.year == date.year }.maxByOrNull { it.id }
+
+fun BusinessTrip.withPolicySnapshot(reimbursementRate: ReimbursementRate?, mileagePolicy: MileagePolicy?): BusinessTrip = copy(
+    reimbursementRateIdSnapshot = reimbursementRate?.id,
+    reimbursementRateCentsPerKmSnapshot = reimbursementRate?.takeIf { it.unit == "km" }?.amountCents,
+    mileagePolicyIdSnapshot = mileagePolicy?.id,
+    mileageRateCentsPerKmSnapshot = mileagePolicy?.mileageRateCentsPerKm,
+    mileageLimitMetersSnapshot = mileagePolicy?.mileageLimitMeters,
+)
+
+fun calculateReimbursementCents(distanceMeters: Long, rateCentsPerKm: Long): Long {
+    require(distanceMeters >= 0)
+    require(rateCentsPerKm >= 0)
+    return (distanceMeters * rateCentsPerKm) / 1000L
+}
+
+fun calculateBusinessTripReimbursementCents(trip: BusinessTrip, legs: List<BusinessTripLeg>): Long? {
+    val rate = trip.reimbursementRateCentsPerKmSnapshot ?: return null
+    return calculateReimbursementCents(legs.filter { it.businessTripId == trip.id }.sumOf { it.distanceMeters }, rate)
+}
