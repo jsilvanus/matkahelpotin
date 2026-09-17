@@ -20,8 +20,8 @@ private fun BusinessLocationEntity.toDomain() = BusinessLocation(id, employmentI
 private fun BusinessLocation.toEntity() = BusinessLocationEntity(id, employmentId, placeId, code, active)
 private fun RouteEntity.toDomain() = Route(id, fromPlaceId, toPlaceId, distanceMeters, durationSeconds, RouteSource.valueOf(source), effectiveFrom, effectiveUntil)
 private fun Route.toEntity() = RouteEntity(id, fromPlaceId, toPlaceId, distanceMeters, durationSeconds, source.name, effectiveFrom, effectiveUntil)
-private fun BusinessTripEntity.toDomain() = BusinessTrip(id, date, employmentId, purpose, TransportMode.valueOf(transportMode), createdAt)
-private fun BusinessTrip.toEntity() = BusinessTripEntity(id, date, employmentId, purpose, transportMode.name, createdAt)
+private fun BusinessTripEntity.toDomain() = BusinessTrip(id, date, employmentId, purpose, TransportMode.valueOf(transportMode), reimbursementRateIdSnapshot, reimbursementRateCentsPerKmSnapshot, mileagePolicyIdSnapshot, mileageRateCentsPerKmSnapshot, mileageLimitMetersSnapshot, createdAt)
+private fun BusinessTrip.toEntity() = BusinessTripEntity(id, date, employmentId, purpose, transportMode.name, reimbursementRateIdSnapshot, reimbursementRateCentsPerKmSnapshot, mileagePolicyIdSnapshot, mileageRateCentsPerKmSnapshot, mileageLimitMetersSnapshot, createdAt)
 private fun BusinessTripLegEntity.toDomain() = BusinessTripLeg(
     id, businessTripId, sequence, fromPlaceId, toPlaceId, fromAddress, toAddress,
     distanceMeters, DistanceSource.valueOf(distanceSource), calculatedDistanceMeters,
@@ -67,3 +67,16 @@ class RoomBusinessTripRepository(
     }
 }
 class RoomBusinessTripLegRepository(private val dao: BusinessTripLegDao) : BusinessTripLegRepository { override fun observeAll(): Flow<List<BusinessTripLeg>> = dao.observeAll().map { it.map(BusinessTripLegEntity::toDomain) }; override suspend fun upsert(value: BusinessTripLeg) = dao.upsert(value.toEntity()); override suspend fun deleteForTrip(tripId: EntityId) = dao.deleteForTrip(tripId) }
+
+private fun ReimbursementRateEntity.toDomain() = ReimbursementRate(id, type, amountCents, currency, unit, validFrom, validUntil, jurisdiction)
+private fun ReimbursementRate.toEntity() = ReimbursementRateEntity(id, type, amountCents, currency, unit, validFrom, validUntil, jurisdiction)
+private fun MileagePolicyEntity.toDomain() = MileagePolicy(id, year, mileageLimitMeters, mileageRateCentsPerKm, jurisdiction)
+private fun MileagePolicy.toEntity() = MileagePolicyEntity(id, year, mileageLimitMeters, mileageRateCentsPerKm, jurisdiction)
+class RoomReimbursementRateRepository(private val dao: ReimbursementRateDao) : ReimbursementRateRepository {
+    override fun observeAll(): Flow<List<ReimbursementRate>> = dao.observeAll().map { it.map(ReimbursementRateEntity::toDomain) }
+    override suspend fun upsert(value: ReimbursementRate) = dao.upsert(value.toEntity())
+}
+class RoomMileagePolicyRepository(private val dao: MileagePolicyDao) : MileagePolicyRepository {
+    override fun observeAll(): Flow<List<MileagePolicy>> = dao.observeAll().map { it.map(MileagePolicyEntity::toDomain) }
+    override suspend fun upsert(value: MileagePolicy) = dao.upsert(value.toEntity())
+}
