@@ -4,9 +4,12 @@ import android.app.Application
 import androidx.room.Room
 import fi.italeino.matkahelpotin.data.*
 import fi.italeino.matkahelpotin.data.local.MatkahelpotinDatabase
+import fi.italeino.matkahelpotin.data.local.MIGRATION_1_2
 
 class MatkahelpotinApplication : Application() {
-    val database: MatkahelpotinDatabase by lazy { Room.databaseBuilder(this, MatkahelpotinDatabase::class.java, "matkahelpotin.db").build() }
+    val database: MatkahelpotinDatabase by lazy { Room.databaseBuilder(this, MatkahelpotinDatabase::class.java, "matkahelpotin.db")
+        .addMigrations(MIGRATION_1_2)
+        .build() }
     val employmentRepository by lazy { RoomEmploymentRepository(database.employmentDao()) }
     val placeRepository by lazy { RoomPlaceRepository(database.placeDao()) }
     val vehicleRepository by lazy { RoomVehicleRepository(database.vehicleDao()) }
