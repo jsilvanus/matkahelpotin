@@ -40,3 +40,17 @@ fun isReturnTrip(trip: BusinessTrip, legs: List<BusinessTripLeg>): Boolean {
         outward.fromPlaceId == reverse.toPlaceId &&
         outward.toPlaceId == reverse.fromPlaceId
 }
+
+/**
+ * Applies a manual effective-distance override to a routed leg and persists it.
+ * The original routing distance/provider remain attached to the leg.
+ */
+suspend fun overrideBusinessTripLegDistance(
+    repository: BusinessTripLegRepository,
+    leg: BusinessTripLeg,
+    distanceMeters: Long,
+): BusinessTripLeg {
+    val updated = leg.withManualDistanceOverride(distanceMeters)
+    repository.upsert(updated)
+    return updated
+}
