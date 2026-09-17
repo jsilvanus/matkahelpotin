@@ -87,6 +87,7 @@ class BusinessViewModel(
             val candidates = tripsNow.filter { trip ->
                 val tripLegs = legsNow.filter { it.businessTripId == trip.id }.sortedBy { it.sequence }
                 val matchesOutward = tripLegs.firstOrNull()?.let { it.fromPlaceId == route.fromPlaceId && it.toPlaceId == route.toPlaceId } == true
+                if (!matchesOutward) return@filter false
                 if (returnOnly) tripLegs.size == 2 else tripLegs.size == 1
             }
             candidates.maxByOrNull { it.createdAt }?.let { trip ->
