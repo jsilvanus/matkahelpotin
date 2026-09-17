@@ -1,7 +1,9 @@
 package fi.italeino.matkahelpotin.ui
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import fi.italeino.matkahelpotin.MatkahelpotinApplication
 import fi.italeino.matkahelpotin.domain.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -25,17 +27,13 @@ class BusinessViewModel(
     val legs: Flow<List<BusinessTripLeg>> = legRepository.observeAll()
 
     fun addBusinessLocation(employmentId: EntityId, placeId: EntityId, code: String?) {
-        viewModelScope.launch {
-            businessLocationRepository.upsert(BusinessLocation(employmentId = employmentId, placeId = placeId, code = code))
-        }
+        viewModelScope.launch { businessLocationRepository.upsert(BusinessLocation(employmentId = employmentId, placeId = placeId, code = code)) }
     }
 
     fun addRoute(fromPlaceId: EntityId, toPlaceId: EntityId, distanceKm: String) {
         val meters = distanceKm.replace(',', '.').toDoubleOrNull()?.times(1000.0)?.toLong() ?: return
         if (meters <= 0L || fromPlaceId == toPlaceId) return
-        viewModelScope.launch {
-            routeRepository.upsert(Route(fromPlaceId = fromPlaceId, toPlaceId = toPlaceId, distanceMeters = meters, source = RouteSource.EMPLOYER_DEFINED))
-        }
+        viewModelScope.launch { routeRepository.upsert(Route(fromPlaceId = fromPlaceId, toPlaceId = toPlaceId, distanceMeters = meters, source = RouteSource.EMPLOYER_DEFINED)) }
     }
 
     fun addOneWay(date: LocalDate, employmentId: EntityId, route: Route, purpose: String? = null) {
@@ -70,6 +68,20 @@ class BusinessViewModel(
                 legRepository.deleteForTrip(trip.id)
                 tripRepository.delete(trip.id)
             }
+        }
+    }
+
+    companion object {
+        fun factory(application: MatkahelpotinApplication) = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T = BusinessViewModel(
+                application.employmentRepository,
+                application.placeRepository,
+                application.businessLocationRepository,
+                application.routeRepository,
+                application.businessTripRepository,
+                application.businessTripLegRepository,
+            ) as T
         }
     }
 }
