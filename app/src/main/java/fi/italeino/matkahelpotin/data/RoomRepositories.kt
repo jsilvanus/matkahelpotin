@@ -1,5 +1,6 @@
 package fi.italeino.matkahelpotin.data
 
+import androidx.room.withTransaction
 import fi.italeino.matkahelpotin.data.local.*
 import fi.italeino.matkahelpotin.domain.*
 import kotlinx.coroutines.flow.Flow
@@ -32,5 +33,29 @@ class RoomCommuteProfileRepository(private val dao: CommuteProfileDao) : Commute
 class RoomCommuteRecordRepository(private val dao: CommuteRecordDao) : CommuteRecordRepository { override fun observeAll(): Flow<List<CommuteRecord>> = dao.observeAll().map { it.map(CommuteRecordEntity::toDomain) }; override suspend fun upsert(value: CommuteRecord) = dao.upsert(value.toEntity()); override suspend fun delete(id: EntityId) = dao.delete(id) }
 class RoomBusinessLocationRepository(private val dao: BusinessLocationDao) : BusinessLocationRepository { override fun observeAll(): Flow<List<BusinessLocation>> = dao.observeAll().map { it.map(BusinessLocationEntity::toDomain) }; override suspend fun upsert(value: BusinessLocation) = dao.upsert(value.toEntity()) }
 class RoomRouteRepository(private val dao: RouteDao) : RouteRepository { override fun observeAll(): Flow<List<Route>> = dao.observeAll().map { it.map(RouteEntity::toDomain) }; override suspend fun upsert(value: Route) = dao.upsert(value.toEntity()) }
-class RoomBusinessTripRepository(private val dao: BusinessTripDao) : BusinessTripRepository { override fun observeAll(): Flow<List<BusinessTrip>> = dao.observeAll().map { it.map(BusinessTripEntity::toDomain) }; override suspend fun upsert(value: BusinessTrip) = dao.upsert(value.toEntity()); override suspend fun delete(id: EntityId) = dao.delete(id) }
+class RoomBusinessTripRepository(
+    private val database: MatkahelpotinDatabase,
+    private val dao: BusinessTripDao,
+    private val legDao: BusinessTripLegDao,
+) : BusinessTripRepository {
+    override fun observeAll(): Flow<List<BusinessTrip>> = dao.observeAll().map { it.map(BusinessTripEntity::toDomain) }
+    override suspend fun upsert(value: BusinessTrip) = dao.upsert(value.toEntity())
+    override suspend fun delete(id: EntityId) = dao.delete(id)
+
+    override suspend fun createWithLegs(trip: BusinessTrip, legs: List<BusinessTripLeg>) {
+        require(legs.isNotEmpty()) { "A business trip must contain at least one leg" }
+        require(legs.all { it.businessTripId == trip.id }) { "All legs must belong to the trip" }
+        database.withTransaction {
+            dao.upsert(trip.toEntity())
+            legs.forEach { legDao.upsert(it.toEntity()) }
+        }
+    }
+
+    override suspend fun deleteWithLegs(id: EntityId) {
+        database.withTransaction {
+            legDao.deleteForTrip(id)
+            dao.delete(id)
+        }
+    }
+}
 class RoomBusinessTripLegRepository(private val dao: BusinessTripLegDao) : BusinessTripLegRepository { override fun observeAll(): Flow<List<BusinessTripLeg>> = dao.observeAll().map { it.map(BusinessTripLegEntity::toDomain) }; override suspend fun upsert(value: BusinessTripLeg) = dao.upsert(value.toEntity()); override suspend fun deleteForTrip(tripId: EntityId) = dao.deleteForTrip(tripId) }
