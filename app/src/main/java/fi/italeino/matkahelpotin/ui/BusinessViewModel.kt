@@ -72,7 +72,11 @@ class BusinessViewModel(
                     fromPlaceId = route.fromPlaceId,
                     toPlaceId = route.toPlaceId,
                     distanceMeters = route.distanceMeters,
-                    distanceSource = route.source,
+                    distanceSource = when (route.source) {
+                        RouteSource.EMPLOYER_DEFINED -> DistanceSource.EMPLOYER_DEFINED
+                        RouteSource.MAP_PROVIDER -> DistanceSource.ROUTING_PROVIDER
+                        RouteSource.MANUAL -> DistanceSource.MANUAL_OVERRIDE
+                    },
                     transportMode = transportMode,
                 )
             }
