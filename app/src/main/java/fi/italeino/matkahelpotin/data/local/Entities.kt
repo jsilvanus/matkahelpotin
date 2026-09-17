@@ -31,7 +31,21 @@ data class RouteEntity(@PrimaryKey val id: java.util.UUID, val fromPlaceId: java
 @Entity(tableName = "business_trip")
 data class BusinessTripEntity(@PrimaryKey val id: java.util.UUID, val date: LocalDate, val employmentId: java.util.UUID, val purpose: String?, val transportMode: String, val createdAt: Instant)
 @Entity(tableName = "business_trip_leg")
-data class BusinessTripLegEntity(@PrimaryKey val id: java.util.UUID, val businessTripId: java.util.UUID, val sequence: Int, val fromPlaceId: java.util.UUID?, val toPlaceId: java.util.UUID?, val fromAddress: String?, val toAddress: String?, val distanceMeters: Long, val distanceSource: String, val transportMode: String)
+data class BusinessTripLegEntity(
+    @PrimaryKey val id: java.util.UUID,
+    val businessTripId: java.util.UUID,
+    val sequence: Int,
+    val fromPlaceId: java.util.UUID?,
+    val toPlaceId: java.util.UUID?,
+    val fromAddress: String?,
+    val toAddress: String?,
+    val distanceMeters: Long,
+    val distanceSource: String,
+    val calculatedDistanceMeters: Long?,
+    val calculatedDistanceProvider: String?,
+    val manualDistanceOverrideMeters: Long?,
+    val transportMode: String,
+)
 @Entity(tableName = "vehicle")
 data class VehicleEntity(@PrimaryKey val id: java.util.UUID, val name: String, val registration: String?, val active: Boolean)
 @Entity(tableName = "reimbursement_rate")
