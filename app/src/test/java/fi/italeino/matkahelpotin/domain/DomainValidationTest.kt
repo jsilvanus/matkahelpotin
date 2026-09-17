@@ -42,7 +42,7 @@ class DomainValidationTest {
         validateBusinessTripLeg(
             BusinessTripLeg(
                 businessTripId = UUID.randomUUID(), sequence = 0, toAddress = "Destination", distanceMeters = 100,
-                distanceSource = RouteSource.MANUAL, transportMode = TransportMode.PRIVATE_CAR
+                distanceSource = DistanceSource.MANUAL_OVERRIDE, manualDistanceOverrideMeters = 100, transportMode = TransportMode.PRIVATE_CAR
             )
         )
     }
