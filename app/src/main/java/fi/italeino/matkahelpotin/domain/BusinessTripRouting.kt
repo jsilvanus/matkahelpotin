@@ -15,6 +15,8 @@ suspend fun createRoutedBusinessTrip(
     routingProvider: RoutingProvider,
     transportMode: TransportMode = TransportMode.PRIVATE_CAR,
     purpose: String? = null,
+    reimbursementRate: ReimbursementRate? = null,
+    mileagePolicy: MileagePolicy? = null,
 ): BusinessTrip {
     require(endpoints.size >= 2) { "A routed trip needs at least an origin and a destination" }
     endpoints.forEach { require(it.address.isNotBlank()) { "Routing addresses must not be blank" } }
@@ -26,7 +28,7 @@ suspend fun createRoutedBusinessTrip(
         employmentId = employmentId,
         purpose = purpose,
         transportMode = transportMode,
-    )
+    ).withPolicySnapshot(reimbursementRate, mileagePolicy)
 
     val legs = endpoints.zipWithNext().mapIndexed { sequence, (origin, destination) ->
         val result = routingProvider.route(
