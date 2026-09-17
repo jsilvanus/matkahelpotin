@@ -15,6 +15,8 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
     val employments by viewModel.employments.collectAsState()
     val places by viewModel.places.collectAsState()
     val vehicles by viewModel.vehicles.collectAsState()
+    val reimbursementRates by viewModel.reimbursementRates.collectAsState()
+    val mileagePolicies by viewModel.mileagePolicies.collectAsState()
     var employer by remember { mutableStateOf("") }
     var place by remember { mutableStateOf("") }
     var vehicle by remember { mutableStateOf("") }
@@ -55,8 +57,8 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     val limit = mileageLimit.replace(',', '.').toDoubleOrNull()?.let { (it * 1000).toLong() }
                     if (cents != null) { viewModel.addMileagePolicy(java.time.LocalDate.now().year, cents, limit); mileageRate = ""; mileageLimit = "" }
                 }) { Text("Add mileage policy for current year") }
-                viewModel.reimbursementRates.forEach { rate -> Text("Reimbursement: " + (rate.amountCents / 100.0) + " €/km from " + rate.validFrom) }
-                viewModel.mileagePolicies.forEach { policy -> Text("Mileage " + policy.year + ": " + (policy.mileageRateCentsPerKm / 100.0) + " €/km" + (policy.mileageLimitMeters?.let { m -> ", limit " + (m / 1000) + " km" } ?: "")) }
+                reimbursementRates.forEach { rate -> Text("Reimbursement: " + (rate.amountCents / 100.0) + " €/km from " + rate.validFrom) }
+                mileagePolicies.forEach { policy -> Text("Mileage " + policy.year + ": " + (policy.mileageRateCentsPerKm / 100.0) + " €/km" + (policy.mileageLimitMeters?.let { m -> ", limit " + (m / 1000) + " km" } ?: "")) }
             }
 
             item { Text("Employments", style = MaterialTheme.typography.titleMedium) }
