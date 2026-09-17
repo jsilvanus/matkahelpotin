@@ -52,8 +52,13 @@ fun BusinessScreen(viewModel: BusinessViewModel) {
                         OutlinedButton(onClick = { weekStart = weekStart.minusWeeks(1) }) { Text("Previous week") }
                         OutlinedButton(onClick = { weekStart = weekStart.plusWeeks(1) }) { Text("Next week") }
                     }
-                    val weeklyMeters = legs.filter { leg -> trips.any { it.id == leg.businessTripId && it.date >= weekStart && it.date < weekStart.plusDays(7) && it.employmentId == employmentId } }.sumOf { it.distanceMeters }
+                    val weekEnd = weekStart.plusDays(7)
+                    val weeklyMeters = legs.filter { leg -> trips.any { it.id == leg.businessTripId && it.date >= weekStart && it.date < weekEnd && it.employmentId == employmentId } }.sumOf { it.distanceMeters }
+                    val monthStart = weekStart.withDayOfMonth(1)
+                    val monthEnd = monthStart.plusMonths(1)
+                    val monthlyMeters = legs.filter { leg -> trips.any { it.id == leg.businessTripId && it.date >= monthStart && it.date < monthEnd && it.employmentId == employmentId } }.sumOf { it.distanceMeters }
                     Text("Week total: ${"%.1f".format(weeklyMeters / 1000.0)} km")
+                    Text("Month total (${monthStart.monthValue}/${monthStart.year}): ${"%.1f".format(monthlyMeters / 1000.0)} km")
                 }
                 BusinessMode.HISTORY -> BusinessHistory(trips, legs, placeNames, employmentId!!)
                 BusinessMode.SETUP -> BusinessSetup(viewModel, selectedEmployment!!, places, locations, routes, placeNames)
@@ -82,10 +87,11 @@ private fun WeekView(viewModel: BusinessViewModel, weekStart: LocalDate, routes:
     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         (0..6).forEach { offset ->
             val date = weekStart.plusDays(offset.toLong())
+            val dayTrips = trips.filter { it.date == date && it.employmentId == employmentId }
             Column(Modifier.width(170.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("${date.dayOfWeek.shortName()}\n${date.dayOfMonth}.${date.monthValue}.", style = MaterialTheme.typography.titleSmall)
                 routes.forEach { route ->
-                    val matching = trips.filter { it.date == date && it.employmentId == employmentId }.filter { trip ->
+                    val matching = dayTrips.filter { trip ->
                         val first = legs.filter { it.businessTripId == trip.id }.minByOrNull { it.sequence }
                         first?.let { it.fromPlaceId == route.fromPlaceId && it.toPlaceId == route.toPlaceId } == true
                     }
@@ -109,6 +115,8 @@ private fun WeekView(viewModel: BusinessViewModel, weekStart: LocalDate, routes:
                         }
                     }
                 }
+                val dayMeters = dayTrips.sumOf { trip -> legs.filter { it.businessTripId == trip.id }.sumOf { it.distanceMeters } }
+                Text("Day total: ${"%.1f".format(dayMeters / 1000.0)} km", style = MaterialTheme.typography.bodySmall)
             }
         }
     }
