@@ -14,6 +14,6 @@ class MatkahelpotinApplication : Application() {
     val commuteRecordRepository by lazy { RoomCommuteRecordRepository(database.commuteRecordDao()) }
     val businessLocationRepository by lazy { RoomBusinessLocationRepository(database.businessLocationDao()) }
     val routeRepository by lazy { RoomRouteRepository(database.routeDao()) }
-    val businessTripRepository by lazy { RoomBusinessTripRepository(database.businessTripDao()) }
+    val businessTripRepository by lazy { RoomBusinessTripRepository(database, database.businessTripDao(), database.businessTripLegDao()) }
     val businessTripLegRepository by lazy { RoomBusinessTripLegRepository(database.businessTripLegDao()) }
 }
