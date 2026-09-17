@@ -1,0 +1,3 @@
+<resources>
+    <style name="Theme.Matkahelpotin" parent="android:style/Theme.Material.Light.NoActionBar" />
+</resources>
