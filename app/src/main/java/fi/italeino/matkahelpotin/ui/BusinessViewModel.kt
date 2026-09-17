@@ -18,6 +18,8 @@ class BusinessViewModel(
     private val routeRepository: RouteRepository,
     private val tripRepository: BusinessTripRepository,
     private val legRepository: BusinessTripLegRepository,
+    private val reimbursementRateRepository: ReimbursementRateRepository,
+    private val mileagePolicyRepository: MileagePolicyRepository,
 ) : ViewModel() {
     val employments: Flow<List<Employment>> = employmentRepository.observeAll()
     val places: Flow<List<Place>> = placeRepository.observeAll()
@@ -25,6 +27,8 @@ class BusinessViewModel(
     val routes: Flow<List<Route>> = routeRepository.observeAll()
     val trips: Flow<List<BusinessTrip>> = tripRepository.observeAll()
     val legs: Flow<List<BusinessTripLeg>> = legRepository.observeAll()
+    val reimbursementRates: Flow<List<ReimbursementRate>> = reimbursementRateRepository.observeAll()
+    val mileagePolicies: Flow<List<MileagePolicy>> = mileagePolicyRepository.observeAll()
 
     fun addBusinessLocation(employmentId: EntityId, placeId: EntityId, code: String?) {
         viewModelScope.launch { businessLocationRepository.upsert(BusinessLocation(employmentId = employmentId, placeId = placeId, code = code)) }
@@ -65,6 +69,9 @@ class BusinessViewModel(
                 employmentId = employmentId,
                 purpose = purpose,
                 transportMode = transportMode,
+            ).withPolicySnapshot(
+                selectReimbursementRate(reimbursementRateRepository.observeAll().first(), date),
+                selectMileagePolicy(mileagePolicyRepository.observeAll().first(), date),
             )
             val legs = routes.mapIndexed { sequence, route ->
                 BusinessTripLeg(
@@ -94,6 +101,8 @@ class BusinessViewModel(
         transportMode: TransportMode = TransportMode.PRIVATE_CAR,
     ) {
         viewModelScope.launch {
+            val reimbursementRate = selectReimbursementRate(reimbursementRateRepository.observeAll().first(), date)
+            val mileagePolicy = selectMileagePolicy(mileagePolicyRepository.observeAll().first(), date)
             createRoutedBusinessTrip(
                 repository = tripRepository,
                 date = date,
@@ -102,6 +111,8 @@ class BusinessViewModel(
                 routingProvider = routingProvider,
                 transportMode = transportMode,
                 purpose = purpose,
+                reimbursementRate = reimbursementRate,
+                mileagePolicy = mileagePolicy,
             )
         }
     }
@@ -140,6 +151,8 @@ class BusinessViewModel(
                 application.routeRepository,
                 application.businessTripRepository,
                 application.businessTripLegRepository,
+                application.reimbursementRateRepository,
+                application.mileagePolicyRepository,
             ) as T
         }
     }
