@@ -123,18 +123,88 @@ private fun WeekView(viewModel: BusinessViewModel, weekStart: LocalDate, routes:
 }
 
 @Composable
-private fun BusinessHistory(trips: List<BusinessTrip>, legs: List<BusinessTripLeg>, placeNames: Map<EntityId, String>, employmentId: EntityId) {
+private fun BusinessHistory(
+    viewModel: BusinessViewModel,
+    trips: List<BusinessTrip>,
+    legs: List<BusinessTripLeg>,
+    placeNames: Map<EntityId, String>,
+    employmentId: EntityId,
+) {
     val rows = trips.filter { it.employmentId == employmentId }.sortedByDescending { it.date }
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    var editingLeg by remember { mutableStateOf<BusinessTripLeg?>(null) }
+    var editingDistance by remember { mutableStateOf("") }
+
+    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Business-trip history", style = MaterialTheme.typography.titleMedium)
         if (rows.isEmpty()) Text("No business trips recorded yet.")
         rows.forEach { trip ->
             val tripLegs = legs.filter { it.businessTripId == trip.id }.sortedBy { it.sequence }
             val distance = tripLegs.sumOf { it.distanceMeters } / 1000.0
-            val path = tripLegs.joinToString(" → ") { leg -> placeNames[leg.fromPlaceId] ?: leg.fromAddress ?: "?" } + (tripLegs.lastOrNull()?.let { " → ${placeNames[it.toPlaceId] ?: it.toAddress ?: "?"}" } ?: "")
-            ListItem(headlineContent = { Text(trip.date.toString()) }, supportingContent = { Text("$path · ${"%.1f".format(distance)} km") })
+            val path = tripLegs.joinToString(" → ") { leg -> placeNames[leg.fromPlaceId] ?: leg.fromAddress ?: "?" } +
+                (tripLegs.lastOrNull()?.let { " → @@{placeNames[it.toPlaceId] ?: it.toAddress ?: "?"}" } ?: "")
+            val provenance = tripLegs.joinToString(" + ") { leg ->
+                when (leg.distanceSource) {
+                    DistanceSource.EMPLOYER_DEFINED -> "employer"
+                    DistanceSource.ROUTING_PROVIDER -> leg.calculatedDistanceProvider ?: "routing"
+                    DistanceSource.MANUAL_OVERRIDE -> {
+                        val provider = leg.calculatedDistanceProvider
+                        if (provider == null) "manual" else "manual · @@{provider}"
+                    }
+                }
+            }
+            ListItem(
+                headlineContent = { Text(trip.date.toString()) },
+                supportingContent = {
+                    Column {
+                        Text("@@{path} · @@{"%.1f".format(distance)} km")
+                        Text("Distance: @@{provenance}", style = MaterialTheme.typography.bodySmall)
+                    }
+                },
+                trailingContent = {
+                    Column {
+                        tripLegs.filter { it.distanceSource != DistanceSource.EMPLOYER_DEFINED }.forEach { leg ->
+                            TextButton(onClick = {
+                                editingLeg = leg
+                                editingDistance = "%.1f".format(leg.distanceMeters / 1000.0)
+                            }) { Text("Edit") }
+                        }
+                    }
+                },
+            )
             HorizontalDivider()
         }
+    }
+
+    val leg = editingLeg
+    if (leg != null) {
+        AlertDialog(
+            onDismissRequest = { editingLeg = null },
+            title = { Text("Edit distance") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Original: @@{"%.1f".format((leg.calculatedDistanceMeters ?: leg.distanceMeters) / 1000.0)} km")
+                    leg.calculatedDistanceProvider?.let { Text("Routing provider: @@{it}") }
+                    OutlinedTextField(
+                        value = editingDistance,
+                        onValueChange = { editingDistance = it },
+                        label = { Text("Effective distance (km)") },
+                        singleLine = true,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = editingDistance.replace(',', '.').toDoubleOrNull()?.let { it >= 0 } == true,
+                    onClick = {
+                        viewModel.overrideLegDistance(leg, editingDistance)
+                        editingLeg = null
+                    },
+                ) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { editingLeg = null }) { Text("Cancel") }
+            },
+        )
     }
 }
 
