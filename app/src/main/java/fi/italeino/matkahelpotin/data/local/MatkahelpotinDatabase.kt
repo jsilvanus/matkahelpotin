@@ -9,7 +9,7 @@ import androidx.room.TypeConverters
         CommuteProfileEntity::class, CommuteRecordEntity::class, BusinessLocationEntity::class,
         RouteEntity::class, BusinessTripEntity::class, BusinessTripLegEntity::class,
         VehicleEntity::class, ReimbursementRateEntity::class, MileagePolicyEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -24,4 +24,6 @@ abstract class MatkahelpotinDatabase : RoomDatabase() {
     abstract fun routeDao(): RouteDao
     abstract fun businessTripDao(): BusinessTripDao
     abstract fun businessTripLegDao(): BusinessTripLegDao
+    abstract fun reimbursementRateDao(): ReimbursementRateDao
+    abstract fun mileagePolicyDao(): MileagePolicyDao
 }
