@@ -15,171 +15,34 @@ class Converters {
 }
 
 @Entity(tableName = "employment")
-data class EmploymentEntity(
-    @PrimaryKey val id: java.util.UUID,
-    val employerName: String,
-    val employerIdentifier: String?,
-    val description: String?,
-    val activeFrom: LocalDate?,
-    val activeUntil: LocalDate?,
-    val createdAt: Instant,
-    val updatedAt: Instant,
-)
-
+data class EmploymentEntity(@PrimaryKey val id: java.util.UUID, val employerName: String, val employerIdentifier: String?, val description: String?, val activeFrom: LocalDate?, val activeUntil: LocalDate?, val createdAt: Instant, val updatedAt: Instant)
 @Entity(tableName = "place")
-data class PlaceEntity(
-    @PrimaryKey val id: java.util.UUID,
-    val name: String,
-    val type: String,
-    val address: String?,
-    val postalCode: String?,
-    val city: String?,
-    val country: String,
-    val latitude: Double?,
-    val longitude: Double?,
-    val source: String?,
-    val createdAt: Instant,
-    val updatedAt: Instant,
-)
-
+data class PlaceEntity(@PrimaryKey val id: java.util.UUID, val name: String, val type: String, val address: String?, val postalCode: String?, val city: String?, val country: String, val latitude: Double?, val longitude: Double?, val source: String?, val createdAt: Instant, val updatedAt: Instant)
 @Entity(primaryKeys = ["employmentId", "placeId"], tableName = "employment_workplace")
-data class EmploymentWorkplaceEntity(
-    val employmentId: java.util.UUID,
-    val placeId: java.util.UUID,
-    val validFrom: LocalDate?,
-    val validUntil: LocalDate?,
-)
-
+data class EmploymentWorkplaceEntity(val employmentId: java.util.UUID, val placeId: java.util.UUID, val validFrom: LocalDate?, val validUntil: LocalDate?)
 @Entity(tableName = "commute_profile")
-data class CommuteProfileEntity(
-    @PrimaryKey val id: java.util.UUID,
-    val employmentId: java.util.UUID,
-    val homePlaceId: java.util.UUID,
-    val workplaceId: java.util.UUID,
-    val transportMode: String,
-    val distanceMeters: Long?,
-    val ticketPriceCents: Long?,
-    val tripsPerDay: Int,
-    val activeFrom: LocalDate?,
-    val activeUntil: LocalDate?,
-    val colourArgb: Long,
-    val enabled: Boolean,
-)
-
+data class CommuteProfileEntity(@PrimaryKey val id: java.util.UUID, val employmentId: java.util.UUID, val homePlaceId: java.util.UUID, val workplaceId: java.util.UUID, val transportMode: String, val distanceMeters: Long?, val ticketPriceCents: Long?, val tripsPerDay: Int, val activeFrom: LocalDate?, val activeUntil: LocalDate?, val colourArgb: Long, val enabled: Boolean)
 @Entity(tableName = "commute_record")
-data class CommuteRecordEntity(
-    @PrimaryKey val id: java.util.UUID,
-    val date: LocalDate,
-    val commuteProfileId: java.util.UUID,
-    val tripCount: Int,
-    val distanceMetersSnapshot: Long?,
-    val costCentsSnapshot: Long?,
-    val createdAt: Instant,
-)
-
+data class CommuteRecordEntity(@PrimaryKey val id: java.util.UUID, val date: LocalDate, val commuteProfileId: java.util.UUID, val tripCount: Int, val distanceMetersSnapshot: Long?, val costCentsSnapshot: Long?, val createdAt: Instant)
 @Entity(tableName = "business_location")
-data class BusinessLocationEntity(
-    @PrimaryKey val id: java.util.UUID,
-    val employmentId: java.util.UUID,
-    val placeId: java.util.UUID,
-    val code: String?,
-    val active: Boolean,
-)
-
+data class BusinessLocationEntity(@PrimaryKey val id: java.util.UUID, val employmentId: java.util.UUID, val placeId: java.util.UUID, val code: String?, val active: Boolean)
 @Entity(tableName = "route")
-data class RouteEntity(
-    @PrimaryKey val id: java.util.UUID,
-    val fromPlaceId: java.util.UUID,
-    val toPlaceId: java.util.UUID,
-    val distanceMeters: Long,
-    val durationSeconds: Long?,
-    val source: String,
-    val effectiveFrom: LocalDate?,
-    val effectiveUntil: LocalDate?,
-)
-
+data class RouteEntity(@PrimaryKey val id: java.util.UUID, val fromPlaceId: java.util.UUID, val toPlaceId: java.util.UUID, val distanceMeters: Long, val durationSeconds: Long?, val source: String, val effectiveFrom: LocalDate?, val effectiveUntil: LocalDate?)
 @Entity(tableName = "business_trip")
-data class BusinessTripEntity(
-    @PrimaryKey val id: java.util.UUID,
-    val date: LocalDate,
-    val employmentId: java.util.UUID,
-    val purpose: String?,
-    val transportMode: String,
-    val createdAt: Instant,
-)
-
-@Entity(primaryKeys = ["id"], tableName = "business_trip_leg")
-data class BusinessTripLegEntity(
-    @PrimaryKey val id: java.util.UUID,
-    val businessTripId: java.util.UUID,
-    val sequence: Int,
-    val fromPlaceId: java.util.UUID?,
-    val toPlaceId: java.util.UUID?,
-    val fromAddress: String?,
-    val toAddress: String?,
-    val distanceMeters: Long,
-    val distanceSource: String,
-    val transportMode: String,
-)
-
+data class BusinessTripEntity(@PrimaryKey val id: java.util.UUID, val date: LocalDate, val employmentId: java.util.UUID, val purpose: String?, val transportMode: String, val createdAt: Instant)
+@Entity(tableName = "business_trip_leg")
+data class BusinessTripLegEntity(@PrimaryKey val id: java.util.UUID, val businessTripId: java.util.UUID, val sequence: Int, val fromPlaceId: java.util.UUID?, val toPlaceId: java.util.UUID?, val fromAddress: String?, val toAddress: String?, val distanceMeters: Long, val distanceSource: String, val transportMode: String)
 @Entity(tableName = "vehicle")
-data class VehicleEntity(
-    @PrimaryKey val id: java.util.UUID,
-    val name: String,
-    val registration: String?,
-    val active: Boolean,
-)
-
+data class VehicleEntity(@PrimaryKey val id: java.util.UUID, val name: String, val registration: String?, val active: Boolean)
 @Entity(tableName = "reimbursement_rate")
-data class ReimbursementRateEntity(
-    @PrimaryKey val id: java.util.UUID,
-    val type: String,
-    val amountCents: Long,
-    val currency: String,
-    val unit: String,
-    val validFrom: LocalDate,
-    val validUntil: LocalDate?,
-    val jurisdiction: String,
-)
-
+data class ReimbursementRateEntity(@PrimaryKey val id: java.util.UUID, val type: String, val amountCents: Long, val currency: String, val unit: String, val validFrom: LocalDate, val validUntil: LocalDate?, val jurisdiction: String)
 @Entity(tableName = "mileage_policy")
-data class MileagePolicyEntity(
-    @PrimaryKey val id: java.util.UUID,
-    val year: Int,
-    val mileageLimitMeters: Long?,
-    val mileageRateCentsPerKm: Long,
-    val jurisdiction: String,
-)
+data class MileagePolicyEntity(@PrimaryKey val id: java.util.UUID, val year: Int, val mileageLimitMeters: Long?, val mileageRateCentsPerKm: Long, val jurisdiction: String)
 
-@Dao
-interface EmploymentDao {
-    @Query("SELECT * FROM employment ORDER BY employerName") fun observeAll(): Flow<List<EmploymentEntity>>
-    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(value: EmploymentEntity)
-}
-
-@Dao
-interface PlaceDao {
-    @Query("SELECT * FROM place ORDER BY name") fun observeAll(): Flow<List<PlaceEntity>>
-    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(value: PlaceEntity)
-}
-
-@Dao
-interface VehicleDao {
-    @Query("SELECT * FROM vehicle ORDER BY name") fun observeAll(): Flow<List<VehicleEntity>>
-    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(value: VehicleEntity)
-}
-
-@Dao
-interface EmploymentWorkplaceDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(value: EmploymentWorkplaceEntity)
-}
-
-@Dao
-interface CommuteProfileDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(value: CommuteProfileEntity)
-}
-
-@Dao
-interface BusinessLocationDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(value: BusinessLocationEntity)
-}
+@Dao interface EmploymentDao { @Query("SELECT * FROM employment ORDER BY employerName") fun observeAll(): Flow<List<EmploymentEntity>>; @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(value: EmploymentEntity) }
+@Dao interface PlaceDao { @Query("SELECT * FROM place ORDER BY name") fun observeAll(): Flow<List<PlaceEntity>>; @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(value: PlaceEntity) }
+@Dao interface VehicleDao { @Query("SELECT * FROM vehicle ORDER BY name") fun observeAll(): Flow<List<VehicleEntity>>; @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(value: VehicleEntity) }
+@Dao interface EmploymentWorkplaceDao { @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(value: EmploymentWorkplaceEntity) }
+@Dao interface CommuteProfileDao { @Query("SELECT * FROM commute_profile ORDER BY id") fun observeAll(): Flow<List<CommuteProfileEntity>>; @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(value: CommuteProfileEntity) }
+@Dao interface CommuteRecordDao { @Query("SELECT * FROM commute_record ORDER BY date") fun observeAll(): Flow<List<CommuteRecordEntity>>; @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(value: CommuteRecordEntity); @Query("DELETE FROM commute_record WHERE id = :id") suspend fun delete(id: java.util.UUID) }
+@Dao interface BusinessLocationDao { @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(value: BusinessLocationEntity) }
