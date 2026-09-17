@@ -37,20 +37,55 @@ class BusinessViewModel(
     }
 
     fun addOneWay(date: LocalDate, employmentId: EntityId, route: Route, purpose: String? = null) {
-        viewModelScope.launch {
-            val tripId = UUID.randomUUID()
-            tripRepository.upsert(BusinessTrip(id = tripId, date = date, employmentId = employmentId, purpose = purpose))
-            legRepository.upsert(BusinessTripLeg(businessTripId = tripId, sequence = 0, fromPlaceId = route.fromPlaceId, toPlaceId = route.toPlaceId, distanceMeters = route.distanceMeters, distanceSource = route.source, transportMode = TransportMode.PRIVATE_CAR))
-        }
+        addMultiLeg(date, employmentId, listOf(route), purpose)
     }
 
     fun addReturn(date: LocalDate, employmentId: EntityId, outward: Route, reverse: Route?) {
         if (reverse == null) return
+        addMultiLeg(date, employmentId, listOf(outward, reverse))
+    }
+
+    /**
+     * Creates one business trip from an ordered chain of predefined routes.
+     * Every leg keeps the route's employer-defined distance and provenance.
+     * The chain must be continuous: the destination of each leg is the origin
+     * of the following leg.
+     */
+    fun addMultiLeg(
+        date: LocalDate,
+        employmentId: EntityId,
+        routes: List<Route>,
+        purpose: String? = null,
+        transportMode: TransportMode = TransportMode.PRIVATE_CAR,
+    ) {
+        if (routes.isEmpty()) return
+        if (routes.zipWithNext().any { (current, next) -> current.toPlaceId != next.fromPlaceId }) return
+        if (routes.any { it.distanceMeters < 0L }) return
+
         viewModelScope.launch {
             val tripId = UUID.randomUUID()
-            tripRepository.upsert(BusinessTrip(id = tripId, date = date, employmentId = employmentId))
-            legRepository.upsert(BusinessTripLeg(businessTripId = tripId, sequence = 0, fromPlaceId = outward.fromPlaceId, toPlaceId = outward.toPlaceId, distanceMeters = outward.distanceMeters, distanceSource = outward.source, transportMode = TransportMode.PRIVATE_CAR))
-            legRepository.upsert(BusinessTripLeg(businessTripId = tripId, sequence = 1, fromPlaceId = reverse.fromPlaceId, toPlaceId = reverse.toPlaceId, distanceMeters = reverse.distanceMeters, distanceSource = reverse.source, transportMode = TransportMode.PRIVATE_CAR))
+            tripRepository.upsert(
+                BusinessTrip(
+                    id = tripId,
+                    date = date,
+                    employmentId = employmentId,
+                    purpose = purpose,
+                    transportMode = transportMode,
+                )
+            )
+            routes.forEachIndexed { sequence, route ->
+                legRepository.upsert(
+                    BusinessTripLeg(
+                        businessTripId = tripId,
+                        sequence = sequence,
+                        fromPlaceId = route.fromPlaceId,
+                        toPlaceId = route.toPlaceId,
+                        distanceMeters = route.distanceMeters,
+                        distanceSource = route.source,
+                        transportMode = transportMode,
+                    )
+                )
+            }
         }
     }
 
