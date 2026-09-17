@@ -30,5 +30,13 @@ fun routeMatchesFirstLeg(trip: BusinessTrip, legs: List<BusinessTripLeg>, route:
     return first.fromPlaceId == route.fromPlaceId && first.toPlaceId == route.toPlaceId
 }
 
-fun isReturnTrip(trip: BusinessTrip, legs: List<BusinessTripLeg>): Boolean =
-    legs.count { it.businessTripId == trip.id } == 2
+fun isReturnTrip(trip: BusinessTrip, legs: List<BusinessTripLeg>): Boolean {
+    val tripLegs = legs.filter { it.businessTripId == trip.id }.sortedBy { it.sequence }
+    if (tripLegs.size != 2) return false
+    val outward = tripLegs[0]
+    val reverse = tripLegs[1]
+    return outward.fromPlaceId != null &&
+        outward.toPlaceId != null &&
+        outward.fromPlaceId == reverse.toPlaceId &&
+        outward.toPlaceId == reverse.fromPlaceId
+}
