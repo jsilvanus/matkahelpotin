@@ -46,6 +46,8 @@ interface BusinessTripRepository {
     fun observeAll(): Flow<List<BusinessTrip>>
     suspend fun upsert(trip: BusinessTrip)
     suspend fun delete(id: EntityId)
+    suspend fun createWithLegs(trip: BusinessTrip, legs: List<BusinessTripLeg>)
+    suspend fun deleteWithLegs(id: EntityId)
 }
 
 interface BusinessTripLegRepository {
