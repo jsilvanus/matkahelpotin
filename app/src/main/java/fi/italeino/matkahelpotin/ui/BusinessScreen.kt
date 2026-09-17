@@ -52,9 +52,7 @@ fun BusinessScreen(viewModel: BusinessViewModel) {
                         OutlinedButton(onClick = { weekStart = weekStart.minusWeeks(1) }) { Text("Previous week") }
                         OutlinedButton(onClick = { weekStart = weekStart.plusWeeks(1) }) { Text("Next week") }
                     }
-                    val weeklyMeters = legs.filter { leg ->
-                        trips.any { it.id == leg.businessTripId && it.date >= weekStart && it.date < weekStart.plusDays(7) && it.employmentId == employmentId }
-                    }.sumOf { it.distanceMeters }
+                    val weeklyMeters = legs.filter { leg -> trips.any { it.id == leg.businessTripId && it.date >= weekStart && it.date < weekStart.plusDays(7) && it.employmentId == employmentId } }.sumOf { it.distanceMeters }
                     Text("Week total: ${"%.1f".format(weeklyMeters / 1000.0)} km")
                 }
                 BusinessMode.HISTORY -> BusinessHistory(trips, legs, placeNames, employmentId!!)
@@ -70,9 +68,7 @@ private fun EmploymentSelector(employments: List<Employment>, selected: Employme
     Box {
         OutlinedButton(onClick = { expanded = true }) { Text(selected?.employerName ?: "Select employment") }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            employments.forEach { employment ->
-                DropdownMenuItem(text = { Text(employment.employerName) }, onClick = { onSelect(employment.id); expanded = false })
-            }
+            employments.forEach { employment -> DropdownMenuItem(text = { Text(employment.employerName) }, onClick = { onSelect(employment.id); expanded = false }) }
         }
     }
 }
@@ -91,7 +87,7 @@ private fun WeekView(viewModel: BusinessViewModel, weekStart: LocalDate, routes:
                 routes.forEach { route ->
                     val matching = trips.filter { it.date == date && it.employmentId == employmentId }.filter { trip ->
                         val first = legs.filter { it.businessTripId == trip.id }.minByOrNull { it.sequence }
-                        first?.fromPlaceId == route.fromPlaceId && first.toPlaceId == route.toPlaceId
+                        first?.let { it.fromPlaceId == route.fromPlaceId && it.toPlaceId == route.toPlaceId } == true
                     }
                     val oneWayCount = matching.count { trip -> legs.count { it.businessTripId == trip.id } == 1 }
                     val returnCount = matching.count { trip -> legs.count { it.businessTripId == trip.id } == 2 }
@@ -127,9 +123,7 @@ private fun BusinessHistory(trips: List<BusinessTrip>, legs: List<BusinessTripLe
         rows.forEach { trip ->
             val tripLegs = legs.filter { it.businessTripId == trip.id }.sortedBy { it.sequence }
             val distance = tripLegs.sumOf { it.distanceMeters } / 1000.0
-            val path = tripLegs.joinToString(" → ") { leg ->
-                placeNames[leg.fromPlaceId] ?: leg.fromAddress ?: "?"
-            } + (tripLegs.lastOrNull()?.let { " → ${placeNames[it.toPlaceId] ?: it.toAddress ?: "?"}" } ?: "")
+            val path = tripLegs.joinToString(" → ") { leg -> placeNames[leg.fromPlaceId] ?: leg.fromAddress ?: "?" } + (tripLegs.lastOrNull()?.let { " → ${placeNames[it.toPlaceId] ?: it.toAddress ?: "?"}" } ?: "")
             ListItem(headlineContent = { Text(trip.date.toString()) }, supportingContent = { Text("$path · ${"%.1f".format(distance)} km") })
             HorizontalDivider()
         }
@@ -154,7 +148,7 @@ private fun BusinessSetup(viewModel: BusinessViewModel, employment: Employment, 
         SimplePlaceSelector("To", businessPlaces, routeTo) { routeTo = it }
         OutlinedTextField(distance, { distance = it }, label = { Text("One-way distance (km)") })
         Button(enabled = routeFrom != null && routeTo != null && distance.replace(',', '.').toDoubleOrNull()?.let { it > 0 } == true, onClick = { viewModel.addRoute(routeFrom!!, routeTo!!, distance); distance = "" }) { Text("Add employer-defined route") }
-        routes.forEach { route -> Text("${placeNames[route.fromPlaceId]} → ${placeNames[route.toPlaceId]}: ${route.distanceMeters / 1000.0} km") }
+        routes.filter { it.fromPlaceId in businessPlaces.map(Place::id) && it.toPlaceId in businessPlaces.map(Place::id) }.forEach { route -> Text("${placeNames[route.fromPlaceId]} → ${placeNames[route.toPlaceId]}: ${route.distanceMeters / 1000.0} km") }
     }
 }
 
