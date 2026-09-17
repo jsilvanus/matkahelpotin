@@ -59,7 +59,31 @@ class BusinessTripLogicTest {
         val legs = listOf(leg(t.id, 0, home, office, 12000), leg(t.id, 1, office, church, 8000))
 
         assertTrue(routeMatchesFirstLeg(t, legs, route))
+        assertFalse(isReturnTrip(t, legs))
+    }
+
+    @Test
+    fun returnTripRequiresReverseSecondLeg() {
+        val t = trip(LocalDate.of(2026, 9, 10))
+        val legs = listOf(leg(t.id, 0, home, office, 12000), leg(t.id, 1, office, home, 12000))
+
         assertTrue(isReturnTrip(t, legs))
+    }
+
+    @Test
+    fun multiLegDistanceIsSummedInSequenceIndependentOfInputOrder() {
+        val t = trip(LocalDate.of(2026, 9, 10))
+        val legs = listOf(
+            leg(t.id, 2, church, home, 5000),
+            leg(t.id, 0, home, office, 12000),
+            leg(t.id, 1, office, church, 8000),
+        )
+
+        val summary = summarizeBusinessTrips(listOf(t), legs, employment)
+
+        assertEquals(1, summary.tripCount)
+        assertEquals(3, summary.legCount)
+        assertEquals(25000, summary.distanceMeters)
     }
 
     @Test
