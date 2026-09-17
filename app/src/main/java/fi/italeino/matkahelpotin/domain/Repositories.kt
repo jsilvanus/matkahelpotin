@@ -22,7 +22,14 @@ interface EmploymentWorkplaceRepository {
 }
 
 interface CommuteProfileRepository {
+    fun observeAll(): Flow<List<CommuteProfile>>
     suspend fun upsert(profile: CommuteProfile)
+}
+
+interface CommuteRecordRepository {
+    fun observeAll(): Flow<List<CommuteRecord>>
+    suspend fun upsert(record: CommuteRecord)
+    suspend fun delete(id: EntityId)
 }
 
 interface BusinessLocationRepository {
