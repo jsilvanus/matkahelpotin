@@ -42,17 +42,7 @@ class BusinessViewModel(
         viewModelScope.launch {
             val tripId = UUID.randomUUID()
             tripRepository.upsert(BusinessTrip(id = tripId, date = date, employmentId = employmentId, purpose = purpose))
-            legRepository.upsert(
-                BusinessTripLeg(
-                    businessTripId = tripId,
-                    sequence = 0,
-                    fromPlaceId = route.fromPlaceId,
-                    toPlaceId = route.toPlaceId,
-                    distanceMeters = route.distanceMeters,
-                    distanceSource = route.source,
-                    transportMode = TransportMode.PRIVATE_CAR,
-                )
-            )
+            legRepository.upsert(BusinessTripLeg(businessTripId = tripId, sequence = 0, fromPlaceId = route.fromPlaceId, toPlaceId = route.toPlaceId, distanceMeters = route.distanceMeters, distanceSource = route.source, transportMode = TransportMode.PRIVATE_CAR))
         }
     }
 
@@ -61,22 +51,8 @@ class BusinessViewModel(
         viewModelScope.launch {
             val tripId = UUID.randomUUID()
             tripRepository.upsert(BusinessTrip(id = tripId, date = date, employmentId = employmentId))
-            legRepository.upsert(
-                BusinessTripLeg(
-                    businessTripId = tripId, sequence = 0,
-                    fromPlaceId = outward.fromPlaceId, toPlaceId = outward.toPlaceId,
-                    distanceMeters = outward.distanceMeters, distanceSource = outward.source,
-                    transportMode = TransportMode.PRIVATE_CAR,
-                )
-            )
-            legRepository.upsert(
-                BusinessTripLeg(
-                    businessTripId = tripId, sequence = 1,
-                    fromPlaceId = reverse.fromPlaceId, toPlaceId = reverse.toPlaceId,
-                    distanceMeters = reverse.distanceMeters, distanceSource = reverse.source,
-                    transportMode = TransportMode.PRIVATE_CAR,
-                )
-            )
+            legRepository.upsert(BusinessTripLeg(businessTripId = tripId, sequence = 0, fromPlaceId = outward.fromPlaceId, toPlaceId = outward.toPlaceId, distanceMeters = outward.distanceMeters, distanceSource = outward.source, transportMode = TransportMode.PRIVATE_CAR))
+            legRepository.upsert(BusinessTripLeg(businessTripId = tripId, sequence = 1, fromPlaceId = reverse.fromPlaceId, toPlaceId = reverse.toPlaceId, distanceMeters = reverse.distanceMeters, distanceSource = reverse.source, transportMode = TransportMode.PRIVATE_CAR))
         }
     }
 
@@ -88,8 +64,7 @@ class BusinessViewModel(
                 val tripLegs = legsNow.filter { it.businessTripId == trip.id }.sortedBy { it.sequence }
                 val matchesOutward = tripLegs.firstOrNull()?.let { it.fromPlaceId == route.fromPlaceId && it.toPlaceId == route.toPlaceId } == true
                 if (!matchesOutward) return@filter false
-                if (!returnOnly) return@filter true
-                tripLegs.size == 2
+                if (returnOnly) tripLegs.size == 2 else tripLegs.size == 1
             }
             candidates.maxByOrNull { it.createdAt }?.let { trip ->
                 legRepository.deleteForTrip(trip.id)
