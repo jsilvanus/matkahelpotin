@@ -45,12 +45,6 @@ class BusinessViewModel(
         addMultiLeg(date, employmentId, listOf(outward, reverse))
     }
 
-    /**
-     * Creates one business trip from an ordered chain of predefined routes.
-     * Every leg keeps the route's employer-defined distance and provenance.
-     * The chain must be continuous: the destination of each leg is the origin
-     * of the following leg.
-     */
     fun addMultiLeg(
         date: LocalDate,
         employmentId: EntityId,
@@ -64,28 +58,25 @@ class BusinessViewModel(
 
         viewModelScope.launch {
             val tripId = UUID.randomUUID()
-            tripRepository.upsert(
-                BusinessTrip(
-                    id = tripId,
-                    date = date,
-                    employmentId = employmentId,
-                    purpose = purpose,
+            val trip = BusinessTrip(
+                id = tripId,
+                date = date,
+                employmentId = employmentId,
+                purpose = purpose,
+                transportMode = transportMode,
+            )
+            val legs = routes.mapIndexed { sequence, route ->
+                BusinessTripLeg(
+                    businessTripId = tripId,
+                    sequence = sequence,
+                    fromPlaceId = route.fromPlaceId,
+                    toPlaceId = route.toPlaceId,
+                    distanceMeters = route.distanceMeters,
+                    distanceSource = route.source,
                     transportMode = transportMode,
                 )
-            )
-            routes.forEachIndexed { sequence, route ->
-                legRepository.upsert(
-                    BusinessTripLeg(
-                        businessTripId = tripId,
-                        sequence = sequence,
-                        fromPlaceId = route.fromPlaceId,
-                        toPlaceId = route.toPlaceId,
-                        distanceMeters = route.distanceMeters,
-                        distanceSource = route.source,
-                        transportMode = transportMode,
-                    )
-                )
             }
+            tripRepository.createWithLegs(trip, legs)
         }
     }
 
@@ -96,12 +87,10 @@ class BusinessViewModel(
             val candidates = tripsNow.filter { trip ->
                 val tripLegs = legsNow.filter { it.businessTripId == trip.id }.sortedBy { it.sequence }
                 val matchesOutward = tripLegs.firstOrNull()?.let { it.fromPlaceId == route.fromPlaceId && it.toPlaceId == route.toPlaceId } == true
-                if (!matchesOutward) return@filter false
                 if (returnOnly) tripLegs.size == 2 else tripLegs.size == 1
             }
             candidates.maxByOrNull { it.createdAt }?.let { trip ->
-                legRepository.deleteForTrip(trip.id)
-                tripRepository.delete(trip.id)
+                tripRepository.deleteWithLegs(trip.id)
             }
         }
     }
