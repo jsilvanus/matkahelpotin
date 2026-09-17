@@ -10,6 +10,8 @@ enum class PlaceType { HOME, WORKPLACE, EMPLOYER_LOCATION, OTHER }
 enum class TransportMode { PRIVATE_CAR, PUBLIC_TRANSPORT }
 enum class RouteSource { EMPLOYER_DEFINED, MAP_PROVIDER, MANUAL }
 
+enum class DistanceSource { EMPLOYER_DEFINED, ROUTING_PROVIDER, MANUAL_OVERRIDE }
+
 data class Employment(
     val id: EntityId = UUID.randomUUID(),
     val employerName: String,
@@ -105,8 +107,15 @@ data class BusinessTripLeg(
     val toPlaceId: EntityId? = null,
     val fromAddress: String? = null,
     val toAddress: String? = null,
+    /** Effective distance used for calculations and reimbursement. */
     val distanceMeters: Long,
-    val distanceSource: RouteSource,
+    val distanceSource: DistanceSource,
+    /** Original routing-provider distance, retained when a manual override is applied. */
+    val calculatedDistanceMeters: Long? = null,
+    /** Stable provider identifier for the original calculated distance. */
+    val calculatedDistanceProvider: String? = null,
+    /** Explicit manual value when the effective distance is manually overridden. */
+    val manualDistanceOverrideMeters: Long? = null,
     val transportMode: TransportMode,
 )
 
@@ -155,6 +164,91 @@ fun validateRoute(route: Route) {
 fun validateBusinessTripLeg(leg: BusinessTripLeg) {
     require(leg.sequence >= 0) { "Leg sequence cannot be negative" }
     require(leg.distanceMeters >= 0) { "Leg distance cannot be negative" }
-    require(leg.fromPlaceId != null || leg.fromAddress != null) { "Leg needs an origin" }
-    require(leg.toPlaceId != null || leg.toAddress != null) { "Leg needs a destination" }
+    require(leg.fromPlaceId != null || !leg.fromAddress.isNullOrBlank()) { "Leg needs an origin" }
+    require(leg.toPlaceId != null || !leg.toAddress.isNullOrBlank()) { "Leg needs a destination" }
+
+    when (leg.distanceSource) {
+        DistanceSource.EMPLOYER_DEFINED -> {
+            require(leg.calculatedDistanceMeters == null) { "Employer-defined distance cannot have a routing-provider distance" }
+            require(leg.calculatedDistanceProvider == null) { "Employer-defined distance cannot have a routing provider" }
+            require(leg.manualDistanceOverrideMeters == null) { "Employer-defined distance cannot have a manual override" }
+        }
+        DistanceSource.ROUTING_PROVIDER -> {
+            require(leg.calculatedDistanceMeters != null && leg.calculatedDistanceMeters >= 0) { "Routing-provider distance must retain the calculated distance" }
+            require(!leg.calculatedDistanceProvider.isNullOrBlank()) { "Routing-provider distance must identify its provider" }
+            require(leg.distanceMeters == leg.calculatedDistanceMeters) { "Effective routing distance must equal the calculated distance" }
+            require(leg.manualDistanceOverrideMeters == null) { "Routing-provider distance cannot have a manual override" }
+        }
+        DistanceSource.MANUAL_OVERRIDE -> {
+            require(leg.manualDistanceOverrideMeters != null && leg.manualDistanceOverrideMeters >= 0) { "Manual override must contain a non-negative distance" }
+            require(leg.distanceMeters == leg.manualDistanceOverrideMeters) { "Effective distance must equal the manual override" }
+            if (leg.calculatedDistanceMeters != null) {
+                require(leg.calculatedDistanceMeters >= 0) { "Original calculated distance cannot be negative" }
+                require(!leg.calculatedDistanceProvider.isNullOrBlank()) { "Original calculated distance must identify its provider" }
+            } else {
+                require(leg.calculatedDistanceProvider == null) { "A provider requires an original calculated distance" }
+            }
+        }
+    }
 }
+
+data class RoutingEndpoint(
+    val address: String,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+)
+
+data class RoutingRequest(
+    val origin: RoutingEndpoint,
+    val destination: RoutingEndpoint,
+    val transportMode: TransportMode,
+)
+
+data class RoutingResult(
+    val distanceMeters: Long,
+    val durationSeconds: Long? = null,
+    val provider: String,
+) {
+    init {
+        require(distanceMeters >= 0) { "Routing distance cannot be negative" }
+        require(provider.isNotBlank()) { "Routing provider must not be blank" }
+    }
+}
+
+interface RoutingProvider {
+    val id: String
+    suspend fun route(request: RoutingRequest): RoutingResult
+}
+
+fun BusinessTripLeg.withManualDistanceOverride(distanceMeters: Long): BusinessTripLeg {
+    require(distanceMeters >= 0) { "Manual distance override cannot be negative" }
+    return copy(
+        distanceMeters = distanceMeters,
+        distanceSource = DistanceSource.MANUAL_OVERRIDE,
+        manualDistanceOverrideMeters = distanceMeters,
+    ).also(::validateBusinessTripLeg)
+}
+
+fun businessTripLegFromRouting(
+    businessTripId: EntityId,
+    sequence: Int,
+    origin: RoutingEndpoint,
+    destination: RoutingEndpoint,
+    transportMode: TransportMode,
+    result: RoutingResult,
+    fromPlaceId: EntityId? = null,
+    toPlaceId: EntityId? = null,
+): BusinessTripLeg =
+    BusinessTripLeg(
+        businessTripId = businessTripId,
+        sequence = sequence,
+        fromPlaceId = fromPlaceId,
+        toPlaceId = toPlaceId,
+        fromAddress = origin.address,
+        toAddress = destination.address,
+        distanceMeters = result.distanceMeters,
+        distanceSource = DistanceSource.ROUTING_PROVIDER,
+        calculatedDistanceMeters = result.distanceMeters,
+        calculatedDistanceProvider = result.provider,
+        transportMode = transportMode,
+    ).also(::validateBusinessTripLeg)
