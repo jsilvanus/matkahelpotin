@@ -16,3 +16,14 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
         )
     }
 }
+
+
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE business_trip ADD COLUMN reimbursementRateIdSnapshot TEXT")
+        database.execSQL("ALTER TABLE business_trip ADD COLUMN reimbursementRateCentsPerKmSnapshot INTEGER")
+        database.execSQL("ALTER TABLE business_trip ADD COLUMN mileagePolicyIdSnapshot TEXT")
+        database.execSQL("ALTER TABLE business_trip ADD COLUMN mileageRateCentsPerKmSnapshot INTEGER")
+        database.execSQL("ALTER TABLE business_trip ADD COLUMN mileageLimitMetersSnapshot INTEGER")
+    }
+}
