@@ -23,7 +23,7 @@ class BusinessTripLogicTest {
             fromPlaceId = from,
             toPlaceId = to,
             distanceMeters = meters,
-            distanceSource = RouteSource.EMPLOYER_DEFINED,
+            distanceSource = DistanceSource.EMPLOYER_DEFINED,
             transportMode = TransportMode.PRIVATE_CAR,
         )
 
@@ -94,5 +94,66 @@ class BusinessTripLogicTest {
 
         assertFalse(isReturnTrip(t, legs))
         assertFalse(routeMatchesFirstLeg(t, legs, route))
+    }
+}
+
+
+class RoutingProvenanceTest {
+    private val tripId = UUID.randomUUID()
+
+    private val origin = RoutingEndpoint("Pori Church, Pori")
+    private val destination = RoutingEndpoint("Pori Cemetery, Pori")
+
+    @Test
+    fun routingLegRetainsCalculatedDistanceAndProvider() {
+        val leg = businessTripLegFromRouting(
+            businessTripId = tripId,
+            sequence = 0,
+            origin = origin,
+            destination = destination,
+            transportMode = TransportMode.PRIVATE_CAR,
+            result = RoutingResult(12500, 900, "test-router"),
+        )
+
+        assertEquals(DistanceSource.ROUTING_PROVIDER, leg.distanceSource)
+        assertEquals(12500, leg.distanceMeters)
+        assertEquals(12500, leg.calculatedDistanceMeters)
+        assertEquals("test-router", leg.calculatedDistanceProvider)
+        assertEquals(origin.address, leg.fromAddress)
+        assertEquals(destination.address, leg.toAddress)
+    }
+
+    @Test
+    fun manualOverrideChangesEffectiveDistanceButRetainsCalculation() {
+        val leg = businessTripLegFromRouting(
+            businessTripId = tripId,
+            sequence = 0,
+            origin = origin,
+            destination = destination,
+            transportMode = TransportMode.PRIVATE_CAR,
+            result = RoutingResult(12500, provider = "test-router"),
+        ).withManualDistanceOverride(11000)
+
+        assertEquals(DistanceSource.MANUAL_OVERRIDE, leg.distanceSource)
+        assertEquals(11000, leg.distanceMeters)
+        assertEquals(11000, leg.manualDistanceOverrideMeters)
+        assertEquals(12500, leg.calculatedDistanceMeters)
+        assertEquals("test-router", leg.calculatedDistanceProvider)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun employerDefinedLegCannotCarryRoutingMetadata() {
+        validateBusinessTripLeg(
+            BusinessTripLeg(
+                businessTripId = tripId,
+                sequence = 0,
+                fromAddress = origin.address,
+                toAddress = destination.address,
+                distanceMeters = 12500,
+                distanceSource = DistanceSource.EMPLOYER_DEFINED,
+                calculatedDistanceMeters = 12500,
+                transportMode = TransportMode.PRIVATE_CAR,
+            )
+        )
     }
 }
