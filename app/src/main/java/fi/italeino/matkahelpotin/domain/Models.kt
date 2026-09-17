@@ -284,3 +284,23 @@ fun calculateBusinessTripReimbursementCents(trip: BusinessTrip, legs: List<Busin
     val rate = trip.reimbursementRateCentsPerKmSnapshot ?: return null
     return calculateReimbursementCents(legs.filter { it.businessTripId == trip.id }.sumOf { it.distanceMeters }, rate)
 }
+
+
+fun calculateAnnualMileageMeters(
+    trips: List<BusinessTrip>,
+    legs: List<BusinessTripLeg>,
+    year: Int,
+    employmentId: EntityId? = null,
+): Long =
+    trips.filter { it.date.year == year && (employmentId == null || it.employmentId == employmentId) }
+        .sumOf { trip -> legs.filter { it.businessTripId == trip.id }.sumOf { it.distanceMeters } }
+
+fun remainingMileageMeters(
+    annualMileageMeters: Long,
+    mileageLimitMeters: Long?,
+): Long? {
+    require(annualMileageMeters >= 0)
+    if (mileageLimitMeters == null) return null
+    require(mileageLimitMeters >= 0)
+    return (mileageLimitMeters - annualMileageMeters).coerceAtLeast(0)
+}
