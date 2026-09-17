@@ -8,7 +8,7 @@ import fi.italeino.matkahelpotin.data.local.MIGRATION_1_2
 
 class MatkahelpotinApplication : Application() {
     val database: MatkahelpotinDatabase by lazy { Room.databaseBuilder(this, MatkahelpotinDatabase::class.java, "matkahelpotin.db")
-        .addMigrations(MIGRATION_1_2)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
         .build() }
     val employmentRepository by lazy { RoomEmploymentRepository(database.employmentDao()) }
     val placeRepository by lazy { RoomPlaceRepository(database.placeDao()) }
@@ -19,4 +19,7 @@ class MatkahelpotinApplication : Application() {
     val routeRepository by lazy { RoomRouteRepository(database.routeDao()) }
     val businessTripRepository by lazy { RoomBusinessTripRepository(database, database.businessTripDao(), database.businessTripLegDao()) }
     val businessTripLegRepository by lazy { RoomBusinessTripLegRepository(database.businessTripLegDao()) }
+    val reimbursementRateRepository by lazy { RoomReimbursementRateRepository(database.reimbursementRateDao()) }
+    val mileagePolicyRepository by lazy { RoomMileagePolicyRepository(database.mileagePolicyDao()) }
 }
+
