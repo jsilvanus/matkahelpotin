@@ -29,7 +29,7 @@ data class BusinessLocationEntity(@PrimaryKey val id: java.util.UUID, val employ
 @Entity(tableName = "route")
 data class RouteEntity(@PrimaryKey val id: java.util.UUID, val fromPlaceId: java.util.UUID, val toPlaceId: java.util.UUID, val distanceMeters: Long, val durationSeconds: Long?, val source: String, val effectiveFrom: LocalDate?, val effectiveUntil: LocalDate?)
 @Entity(tableName = "business_trip")
-data class BusinessTripEntity(@PrimaryKey val id: java.util.UUID, val date: LocalDate, val employmentId: java.util.UUID, val purpose: String?, val transportMode: String, val createdAt: Instant)
+data class BusinessTripEntity(@PrimaryKey val id: java.util.UUID, val date: LocalDate, val employmentId: java.util.UUID, val purpose: String?, val transportMode: String, val reimbursementRateIdSnapshot: java.util.UUID?, val reimbursementRateCentsPerKmSnapshot: Long?, val mileagePolicyIdSnapshot: java.util.UUID?, val mileageRateCentsPerKmSnapshot: Long?, val mileageLimitMetersSnapshot: Long?, val createdAt: Instant)
 @Entity(tableName = "business_trip_leg")
 data class BusinessTripLegEntity(
     @PrimaryKey val id: java.util.UUID,
@@ -62,4 +62,6 @@ data class MileagePolicyEntity(@PrimaryKey val id: java.util.UUID, val year: Int
 @Dao interface BusinessLocationDao { @Query("SELECT * FROM business_location ORDER BY code") fun observeAll(): Flow<List<BusinessLocationEntity>>; @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(value: BusinessLocationEntity) }
 @Dao interface RouteDao { @Query("SELECT * FROM route ORDER BY fromPlaceId, toPlaceId") fun observeAll(): Flow<List<RouteEntity>>; @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(value: RouteEntity) }
 @Dao interface BusinessTripDao { @Query("SELECT * FROM business_trip ORDER BY date DESC") fun observeAll(): Flow<List<BusinessTripEntity>>; @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(value: BusinessTripEntity); @Query("DELETE FROM business_trip WHERE id = :id") suspend fun delete(id: java.util.UUID) }
+@Dao interface ReimbursementRateDao { @Query("SELECT * FROM reimbursement_rate ORDER BY validFrom") fun observeAll(): Flow<List<ReimbursementRateEntity>>; @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(value: ReimbursementRateEntity) }
+@Dao interface MileagePolicyDao { @Query("SELECT * FROM mileage_policy ORDER BY year") fun observeAll(): Flow<List<MileagePolicyEntity>>; @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(value: MileagePolicyEntity) }
 @Dao interface BusinessTripLegDao { @Query("SELECT * FROM business_trip_leg ORDER BY businessTripId, sequence") fun observeAll(): Flow<List<BusinessTripLegEntity>>; @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(value: BusinessTripLegEntity); @Query("DELETE FROM business_trip_leg WHERE businessTripId = :tripId") suspend fun deleteForTrip(tripId: java.util.UUID) }
