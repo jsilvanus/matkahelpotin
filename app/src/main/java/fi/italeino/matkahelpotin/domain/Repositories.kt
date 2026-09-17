@@ -33,5 +33,23 @@ interface CommuteRecordRepository {
 }
 
 interface BusinessLocationRepository {
+    fun observeAll(): Flow<List<BusinessLocation>>
     suspend fun upsert(location: BusinessLocation)
+}
+
+interface RouteRepository {
+    fun observeAll(): Flow<List<Route>>
+    suspend fun upsert(route: Route)
+}
+
+interface BusinessTripRepository {
+    fun observeAll(): Flow<List<BusinessTrip>>
+    suspend fun upsert(trip: BusinessTrip)
+    suspend fun delete(id: EntityId)
+}
+
+interface BusinessTripLegRepository {
+    fun observeAll(): Flow<List<BusinessTripLeg>>
+    suspend fun upsert(leg: BusinessTripLeg)
+    suspend fun deleteForTrip(tripId: EntityId)
 }
