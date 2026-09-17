@@ -21,4 +21,7 @@ abstract class MatkahelpotinDatabase : RoomDatabase() {
     abstract fun commuteProfileDao(): CommuteProfileDao
     abstract fun commuteRecordDao(): CommuteRecordDao
     abstract fun businessLocationDao(): BusinessLocationDao
+    abstract fun routeDao(): RouteDao
+    abstract fun businessTripDao(): BusinessTripDao
+    abstract fun businessTripLegDao(): BusinessTripLegDao
 }
