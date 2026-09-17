@@ -22,8 +22,16 @@ private fun RouteEntity.toDomain() = Route(id, fromPlaceId, toPlaceId, distanceM
 private fun Route.toEntity() = RouteEntity(id, fromPlaceId, toPlaceId, distanceMeters, durationSeconds, source.name, effectiveFrom, effectiveUntil)
 private fun BusinessTripEntity.toDomain() = BusinessTrip(id, date, employmentId, purpose, TransportMode.valueOf(transportMode), createdAt)
 private fun BusinessTrip.toEntity() = BusinessTripEntity(id, date, employmentId, purpose, transportMode.name, createdAt)
-private fun BusinessTripLegEntity.toDomain() = BusinessTripLeg(id, businessTripId, sequence, fromPlaceId, toPlaceId, fromAddress, toAddress, distanceMeters, RouteSource.valueOf(distanceSource), TransportMode.valueOf(transportMode))
-private fun BusinessTripLeg.toEntity() = BusinessTripLegEntity(id, businessTripId, sequence, fromPlaceId, toPlaceId, fromAddress, toAddress, distanceMeters, distanceSource.name, transportMode.name)
+private fun BusinessTripLegEntity.toDomain() = BusinessTripLeg(
+    id, businessTripId, sequence, fromPlaceId, toPlaceId, fromAddress, toAddress,
+    distanceMeters, DistanceSource.valueOf(distanceSource), calculatedDistanceMeters,
+    calculatedDistanceProvider, manualDistanceOverrideMeters, TransportMode.valueOf(transportMode)
+)
+private fun BusinessTripLeg.toEntity() = BusinessTripLegEntity(
+    id, businessTripId, sequence, fromPlaceId, toPlaceId, fromAddress, toAddress,
+    distanceMeters, distanceSource.name, calculatedDistanceMeters,
+    calculatedDistanceProvider, manualDistanceOverrideMeters, transportMode.name
+)
 
 class RoomEmploymentRepository(private val dao: EmploymentDao) : EmploymentRepository { override fun observeAll() = dao.observeAll().map { it.map(EmploymentEntity::toDomain) }; override suspend fun upsert(value: Employment) = dao.upsert(value.toEntity()) }
 class RoomPlaceRepository(private val dao: PlaceDao) : PlaceRepository { override fun observeAll() = dao.observeAll().map { it.map(PlaceEntity::toDomain) }; override suspend fun upsert(value: Place) = dao.upsert(value.toEntity()) }
