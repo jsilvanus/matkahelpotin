@@ -87,6 +87,27 @@ class BusinessViewModel(
         }
     }
 
+    fun addRoutedTrip(
+        date: LocalDate,
+        employmentId: EntityId,
+        endpoints: List<RoutingEndpoint>,
+        routingProvider: RoutingProvider,
+        purpose: String? = null,
+        transportMode: TransportMode = TransportMode.PRIVATE_CAR,
+    ) {
+        viewModelScope.launch {
+            createRoutedBusinessTrip(
+                repository = tripRepository,
+                date = date,
+                employmentId = employmentId,
+                endpoints = endpoints,
+                routingProvider = routingProvider,
+                transportMode = transportMode,
+                purpose = purpose,
+            )
+        }
+    }
+
     fun removeOne(date: LocalDate, route: Route, returnOnly: Boolean = false) {
         viewModelScope.launch {
             val tripsNow = trips.first().filter { it.date == date }
