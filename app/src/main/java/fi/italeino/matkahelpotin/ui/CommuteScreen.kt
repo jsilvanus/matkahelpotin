@@ -1,11 +1,9 @@
 package fi.italeino.matkahelpotin.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -23,6 +21,7 @@ fun CommuteScreen(viewModel: CommuteViewModel) {
     val records by viewModel.records.collectAsState()
     val employments = profiles.map { it.employmentId }.distinct()
     var month by remember { mutableStateOf(YearMonth.now()) }
+    var infoDate by remember { mutableStateOf<LocalDate?>(null) }
     val days = (1..month.lengthOfMonth()).map(month::atDay)
     val leading = (month.atDay(1).dayOfWeek.value - DayOfWeek.MONDAY.value + 7) % 7
     val mileagePolicies by viewModel.mileagePolicies.collectAsState(emptyList())
@@ -35,9 +34,7 @@ fun CommuteScreen(viewModel: CommuteViewModel) {
 
     Scaffold(topBar = { TopAppBar(title = { Text("Commute") }) }) { padding ->
         Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            if (employments.size > 1) {
-                EmploymentDropdown(employments, employmentId) { employmentId = it }
-            }
+            if (employments.size > 1) EmploymentDropdown(employments, employmentId) { employmentId = it }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = { month = month.minusMonths(1) }) { Text("‹") }
                 Text("${month.month.name.lowercase().replaceFirstChar { it.uppercase() }} ${month.year}", Modifier.padding(top = 12.dp))
@@ -45,15 +42,14 @@ fun CommuteScreen(viewModel: CommuteViewModel) {
             }
             Text("Annual commute mileage: ${"%.1f".format(annualMileage / 1000.0)} km")
             policy?.mileageLimitMeters?.let { Text("Annual commute limit: ${"%.1f".format(it / 1000.0)} km; remaining: ${"%.1f".format((remaining ?: 0L) / 1000.0)} km") }
-            if (profiles.isEmpty()) {
-                Text("Configure a commute profile in Settings first.")
-            } else {
+            if (profiles.isEmpty()) Text("Configure a commute profile in Settings first.")
+            else {
                 LazyVerticalGrid(columns = GridCells.Fixed(7), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     items((0 until leading).toList()) { Spacer(Modifier.padding(4.dp)) }
                     items(days) { date ->
                         val record = visibleRecords.firstOrNull { it.date == date }
                         val profile = record?.let { r -> visibleProfiles.firstOrNull { it.id == r.commuteProfileId } }
-                        DayCell(date, profile) { viewModel.cycleDay(date, employmentId) }
+                        DayCell(date, profile, onClick = { viewModel.cycleDay(date, employmentId) }, onLongClick = { infoDate = date })
                     }
                 }
             }
@@ -62,6 +58,26 @@ fun CommuteScreen(viewModel: CommuteViewModel) {
                 Text("${record.date}: ${record.tripCount} trips · ${"%.1f".format((record.distanceMetersSnapshot ?: 0L) / 1000.0)} km")
             }
         }
+    }
+
+    infoDate?.let { date ->
+        val record = visibleRecords.firstOrNull { it.date == date }
+        val profile = record?.let { r -> visibleProfiles.firstOrNull { it.id == r.commuteProfileId } }
+        AlertDialog(
+            onDismissRequest = { infoDate = null },
+            title = { Text(date.toString()) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (record == null) Text("No commute recorded.")
+                    else {
+                        Text("Trips: ${record.tripCount}")
+                        Text("Distance: ${"%.1f".format((record.distanceMetersSnapshot ?: 0L) / 1000.0)} km")
+                        profile?.let { Text("Transport: ${it.transportMode.name}") }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { infoDate = null }) { Text("Close") } },
+        )
     }
 }
 
@@ -77,9 +93,9 @@ private fun EmploymentDropdown(employmentIds: List<EntityId>, selected: EntityId
 }
 
 @Composable
-private fun DayCell(date: LocalDate, profile: CommuteProfile?, onClick: () -> Unit) {
+private fun DayCell(date: LocalDate, profile: CommuteProfile?, onClick: () -> Unit, onLongClick: () -> Unit) {
     val color = profile?.let { Color(it.colourArgb.toInt()) } ?: MaterialTheme.colorScheme.surfaceVariant
-    Card(modifier = Modifier.clickable(onClick = onClick)) {
+    Card(modifier = Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)) {
         Column(Modifier.background(color).fillMaxWidth().padding(8.dp)) {
             Text("${date.dayOfMonth}")
             if (profile != null) Text(if (profile.transportMode.name == "PRIVATE_CAR") "car" else "PT")
