@@ -36,3 +36,10 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
         database.execSQL("UPDATE mileage_policy SET validFrom = printf('%04d-01-01', year)")
     }
 }
+
+
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE mileage_policy ADD COLUMN scope TEXT NOT NULL DEFAULT 'BUSINESS_TRIP'")
+    }
+}
