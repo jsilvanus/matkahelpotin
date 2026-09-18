@@ -2,8 +2,18 @@
 .gradle/
 local.properties
 .idea/
+.vscode/
 /build/
 */build/
+**/build/
 .cxx/
 .externalNativeBuild/
 .DS_Store
+
+# Node / browser extension output
+node_modules/
+dist/
+coverage/
+
+# Local generated assets
+*.log
