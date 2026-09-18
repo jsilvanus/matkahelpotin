@@ -1,9 +1,50 @@
+# IDE / local developer files
 *.iml
-.gradle/
-local.properties
+*.ipr
+*.iws
 .idea/
+.vscode/
+local.properties
+*.hprof
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Gradle / Android build output
+.gradle/
 /build/
 */build/
 .cxx/
 .externalNativeBuild/
-.DS_Store
+.kotlin/
+captures/
+*.apk
+*.ap_
+*.aab
+*.aar
+*.jks
+*.keystore
+*.class
+*.dex
+
+# Test / lint / generated reports
+/coverage/
+*/coverage/
+*.log
+lint-results/
+test-results/
+androidTest-results/
+
+# Node / browser extension output
+/node_modules/
+*/node_modules/
+/dist/
+*/dist/
+.npm/
+.nyc_output/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
