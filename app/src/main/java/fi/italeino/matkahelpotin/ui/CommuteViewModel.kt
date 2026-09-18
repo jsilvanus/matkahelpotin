@@ -18,9 +18,9 @@ class CommuteViewModel(
     val records: Flow<List<CommuteRecord>> = recordRepository.observeAll()
     val mileagePolicies: Flow<List<MileagePolicy>> = mileagePolicyRepository.observeAll()
 
-    fun cycleDay(date: LocalDate) {
+    fun cycleDay(date: LocalDate, employmentId: EntityId? = null) {
         viewModelScope.launch {
-            val profilesNow = profiles.first().filter { it.enabled }.sortedBy { it.id.toString() }
+            val profilesNow = profiles.first().filter { it.enabled && (employmentId == null || it.employmentId == employmentId) }.sortedBy { it.id.toString() }
             val current = records.first().firstOrNull { it.date == date }
             val next = when {
                 profilesNow.isEmpty() -> null
