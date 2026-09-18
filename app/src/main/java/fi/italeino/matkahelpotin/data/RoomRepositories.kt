@@ -70,8 +70,8 @@ class RoomBusinessTripLegRepository(private val dao: BusinessTripLegDao) : Busin
 
 private fun ReimbursementRateEntity.toDomain() = ReimbursementRate(id, type, amountCents, currency, unit, validFrom, validUntil, jurisdiction)
 private fun ReimbursementRate.toEntity() = ReimbursementRateEntity(id, type, amountCents, currency, unit, validFrom, validUntil, jurisdiction)
-private fun MileagePolicyEntity.toDomain() = MileagePolicy(id, year, mileageLimitMeters, mileageRateCentsPerKm, jurisdiction, validFrom, validUntil)
-private fun MileagePolicy.toEntity() = MileagePolicyEntity(id, year, mileageLimitMeters, mileageRateCentsPerKm, jurisdiction, validFrom, validUntil)
+private fun MileagePolicyEntity.toDomain() = MileagePolicy(id, year, mileageLimitMeters, mileageRateCentsPerKm, jurisdiction, MileagePolicyScope.valueOf(scope), validFrom, validUntil)
+private fun MileagePolicy.toEntity() = MileagePolicyEntity(id, year, mileageLimitMeters, mileageRateCentsPerKm, jurisdiction, scope.name, validFrom, validUntil)
 class RoomReimbursementRateRepository(private val dao: ReimbursementRateDao) : ReimbursementRateRepository {
     override fun observeAll(): Flow<List<ReimbursementRate>> = dao.observeAll().map { it.map(ReimbursementRateEntity::toDomain) }
     override suspend fun upsert(value: ReimbursementRate) = dao.upsert(value.toEntity())
