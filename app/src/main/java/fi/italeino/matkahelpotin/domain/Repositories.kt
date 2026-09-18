@@ -60,6 +60,7 @@ interface ReimbursementRateRepository {
     fun observeAll(): Flow<List<ReimbursementRate>>
     suspend fun upsert(rate: ReimbursementRate)
 }
+
 interface MileagePolicyRepository {
     fun observeAll(): Flow<List<MileagePolicy>>
     suspend fun upsert(policy: MileagePolicy)
