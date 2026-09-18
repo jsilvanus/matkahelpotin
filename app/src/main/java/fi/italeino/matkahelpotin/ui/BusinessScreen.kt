@@ -1,5 +1,6 @@
 package fi.italeino.matkahelpotin.ui
 
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -27,6 +28,7 @@ fun BusinessScreen(viewModel: BusinessViewModel) {
     var weekStart by remember { mutableStateOf(LocalDate.now().with(WeekFields.ISO.dayOfWeek(), 1)) }
     var employmentId by remember { mutableStateOf<EntityId?>(null) }
     var mode by remember { mutableStateOf(BusinessMode.WEEK) }
+    var infoDate by remember { mutableStateOf<LocalDate?>(null) }
 
     LaunchedEffect(employments) { if (employmentId == null) employmentId = employments.firstOrNull()?.id }
     val selectedEmployment = employments.firstOrNull { it.id == employmentId }
@@ -48,7 +50,7 @@ fun BusinessScreen(viewModel: BusinessViewModel) {
             }
             when (mode) {
                 BusinessMode.WEEK -> {
-                    WeekView(viewModel, weekStart, visibleRoutes, trips, legs, placeNames, employmentId!!, routes)
+                    WeekView(viewModel, weekStart, visibleRoutes, trips, legs, placeNames, employmentId!!, routes, onLongPress = { infoDate = it })
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(onClick = { weekStart = weekStart.minusWeeks(1) }) { Text("Previous week") }
                         OutlinedButton(onClick = { weekStart = weekStart.plusWeeks(1) }) { Text("Next week") }
@@ -78,7 +80,28 @@ fun BusinessScreen(viewModel: BusinessViewModel) {
             }
         }
     }
-}
+
+    infoDate?.let { date ->
+        val dayTrips = trips.filter { it.date == date && it.employmentId == employmentId }
+        AlertDialog(
+            onDismissRequest = { infoDate = null },
+            title = { Text(date.toString()) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (dayTrips.isEmpty()) Text("No business trips recorded.")
+                    dayTrips.forEach { trip ->
+                        val tripLegs = legs.filter { it.businessTripId == trip.id }.sortedBy { it.sequence }
+                        val distance = tripLegs.sumOf { it.distanceMeters } / 1000.0
+                        Text("${trip.purpose ?: "Business trip"} · ${"%.1f".format(distance)} km")
+                        tripLegs.forEach { leg ->
+                            Text("  ${placeNames[leg.fromPlaceId] ?: leg.fromAddress ?: "?"} → ${placeNames[leg.toPlaceId] ?: leg.toAddress ?: "?"} · ${"%.1f".format(leg.distanceMeters / 1000.0)} km", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { infoDate = null }) { Text("Close") } },
+        )
+    }}
 
 @Composable
 private fun EmploymentSelector(employments: List<Employment>, selected: Employment?, onSelect: (EntityId) -> Unit) {
@@ -92,7 +115,7 @@ private fun EmploymentSelector(employments: List<Employment>, selected: Employme
 }
 
 @Composable
-private fun WeekView(viewModel: BusinessViewModel, weekStart: LocalDate, routes: List<Route>, trips: List<BusinessTrip>, legs: List<BusinessTripLeg>, placeNames: Map<EntityId, String>, employmentId: EntityId, allRoutes: List<Route>) {
+private fun WeekView(viewModel: BusinessViewModel, weekStart: LocalDate, routes: List<Route>, trips: List<BusinessTrip>, legs: List<BusinessTripLeg>, placeNames: Map<EntityId, String>, employmentId: EntityId, allRoutes: List<Route>, onLongPress: (LocalDate) -> Unit) {
     if (routes.isEmpty()) {
         Text("No predefined business routes yet. Open Setup to add locations and routes.")
         return
@@ -101,7 +124,7 @@ private fun WeekView(viewModel: BusinessViewModel, weekStart: LocalDate, routes:
         (0..6).forEach { offset ->
             val date = weekStart.plusDays(offset.toLong())
             val dayTrips = trips.filter { it.date == date && it.employmentId == employmentId }
-            Column(Modifier.width(170.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.width(170.dp).combinedClickable(onClick = {}, onLongClick = { onLongPress(date) }), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("${date.dayOfWeek.shortName()}\n${date.dayOfMonth}.${date.monthValue}.", style = MaterialTheme.typography.titleSmall)
                 routes.forEach { route ->
                     val matching = dayTrips.filter { trip ->
