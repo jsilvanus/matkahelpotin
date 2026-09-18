@@ -1,9 +1,59 @@
 {
   "$schema":"https://json-schema.org/draft/2020-12/schema",
   "type":"object",
+  "additionalProperties":false,
   "required":["schemaVersion","dateRange","employments","places","profiles","records"],
   "properties":{
-    "schemaVersion":{"const":1},"dateRange":{"$ref":"manifest.schema.json#/$defs/dateRange"},
-    "employments":{"type":"array"},"places":{"type":"array"},"profiles":{"type":"array"},"records":{"type":"array"}
+    "schemaVersion":{"const":1},
+    "dateRange":{"$ref":"manifest.schema.json#/$defs/dateRange"},
+    "employments":{"type":"array","items":{"$ref":"#/$defs/employment"}},
+    "places":{"type":"array","items":{"$ref":"#/$defs/place"}},
+    "profiles":{"type":"array","items":{"$ref":"#/$defs/profile"}},
+    "records":{"type":"array","items":{"$ref":"#/$defs/record"}}
+  },
+  "$defs":{
+    "uuid":{"type":"string","format":"uuid"},
+    "date":{"type":"string","format":"date"},
+    "instant":{"type":"string","format":"date-time"},
+    "employment":{
+      "type":"object","additionalProperties":false,
+      "required":["id","employerName","country","createdAt","updatedAt"],
+      "properties":{
+        "id":{"$ref":"#/$defs/uuid"},"employerName":{"type":"string"},
+        "employerIdentifier":{"type":["string","null"]},"description":{"type":["string","null"]},
+        "activeFrom":{"type":["string","null"],"format":"date"},"activeUntil":{"type":["string","null"],"format":"date"},
+        "createdAt":{"$ref":"#/$defs/instant"},"updatedAt":{"$ref":"#/$defs/instant"}
+      }
+    },
+    "place":{
+      "type":"object","additionalProperties":false,
+      "required":["id","name","type","country","createdAt","updatedAt"],
+      "properties":{
+        "id":{"$ref":"#/$defs/uuid"},"name":{"type":"string"},"type":{"type":"string"},
+        "address":{"type":["string","null"]},"postalCode":{"type":["string","null"]},"city":{"type":["string","null"]},
+        "country":{"type":"string"},"latitude":{"type":["number","null"]},"longitude":{"type":["number","null"]},
+        "source":{"type":["string","null"]},"createdAt":{"$ref":"#/$defs/instant"},"updatedAt":{"$ref":"#/$defs/instant"}
+      }
+    },
+    "profile":{
+      "type":"object","additionalProperties":false,
+      "required":["id","employmentId","homePlaceId","workplaceId","transportMode","tripsPerDay","colourArgb","enabled"],
+      "properties":{
+        "id":{"$ref":"#/$defs/uuid"},"employmentId":{"$ref":"#/$defs/uuid"},
+        "homePlaceId":{"$ref":"#/$defs/uuid"},"workplaceId":{"$ref":"#/$defs/uuid"},
+        "transportMode":{"type":"string"},"distanceMeters":{"type":["integer","null"]},"ticketPriceCents":{"type":["integer","null"]},
+        "tripsPerDay":{"type":"integer","minimum":0},"activeFrom":{"type":["string","null"],"format":"date"},
+        "activeUntil":{"type":["string","null"],"format":"date"},"colourArgb":{"type":"integer"},"enabled":{"type":"boolean"}
+      }
+    },
+    "record":{
+      "type":"object","additionalProperties":false,
+      "required":["id","date","commuteProfileId","tripCount","createdAt"],
+      "properties":{
+        "id":{"$ref":"#/$defs/uuid"},"date":{"$ref":"#/$defs/date"},"commuteProfileId":{"$ref":"#/$defs/uuid"},
+        "tripCount":{"type":"integer","minimum":0},"distanceMetersSnapshot":{"type":["integer","null"]},
+        "costCentsSnapshot":{"type":["integer","null"]},"createdAt":{"$ref":"#/$defs/instant"}
+      }
+    }
   }
 }
