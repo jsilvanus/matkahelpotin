@@ -29,7 +29,7 @@ fun CommuteScreen(viewModel: CommuteViewModel) {
     LaunchedEffect(employments) { if (employmentId == null) employmentId = employments.firstOrNull() }
     val visibleProfiles = profiles.filter { it.employmentId == employmentId }
     val visibleRecords = records.filter { record -> visibleProfiles.any { it.id == record.commuteProfileId } }
-    val annualMileage = calculateAnnualCommuteMileageMeters(records, profiles, month.year, employmentId)
+    val annualMileage = calculateAnnualCommuteMileageMeters(visibleRecords, visibleProfiles, month.year)
     val policy = selectMileagePolicy(mileagePolicies, month.atDay(1), scope = MileagePolicyScope.COMMUTE)
     val remaining = remainingMileageMeters(annualMileage, policy?.mileageLimitMeters)
 
