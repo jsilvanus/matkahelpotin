@@ -71,11 +71,21 @@ class ImportService(private val database: MatkahelpotinDatabase) {
                 plan.commute.filterValues { it == ImportAction.DESTROY }.keys.forEach { date ->
                     cd += database.commuteRecordDao().deleteByDate(date)
                 }
-                packageData.commute.filter { plan.commute[it.date] == ImportAction.ADD || plan.commute[it.date] == ImportAction.DESTROY }
-                    .forEach { database.commuteRecordDao().upsert(it.record); ci++ }
-                packageData.commute.map { it.profile }.distinctBy { it.id }.forEach(database.commuteProfileDao()::upsert)
-                packageData.commute.map { it.employment }.distinctBy { it.id }.forEach(database.employmentDao()::upsert)
-                packageData.commute.flatMap { it.places }.distinctBy { it.id }.forEach(database.placeDao()::upsert)
+
+                // Configuration/reference data must exist before dependent records.
+                packageData.commute.flatMap { it.places }.distinctBy { it.id }
+                    .forEach(database.placeDao()::upsert)
+                packageData.commute.map { it.employment }.distinctBy { it.id }
+                    .forEach(database.employmentDao()::upsert)
+                packageData.commute.map { it.profile }.distinctBy { it.id }
+                    .forEach(database.commuteProfileDao()::upsert)
+
+                packageData.commute
+                    .filter { plan.commute[it.date] == ImportAction.ADD || plan.commute[it.date] == ImportAction.DESTROY }
+                    .forEach {
+                        database.commuteRecordDao().upsert(it.record)
+                        ci++
+                    }
             }
 
             if (ExportDataset.BUSINESS_TRIPS in packageData.datasets) {
@@ -87,17 +97,24 @@ class ImportService(private val database: MatkahelpotinDatabase) {
                     }
                     bd += trips.size
                 }
-                packageData.business.filter {
-                    plan.businessTrips[it.trip.date] == ImportAction.ADD || plan.businessTrips[it.trip.date] == ImportAction.DESTROY
-                }.forEach {
-                    database.businessTripDao().upsert(it.trip)
-                    it.legs.forEach(database.businessTripLegDao()::upsert)
-                    bi++
-                }
-                packageData.business.flatMap { it.employments }.distinctBy { it.id }.forEach(database.employmentDao()::upsert)
-                packageData.business.flatMap { it.places }.distinctBy { it.id }.forEach(database.placeDao()::upsert)
-                packageData.business.flatMap { it.locations }.distinctBy { it.id }.forEach(database.businessLocationDao()::upsert)
-                packageData.business.flatMap { it.routes }.distinctBy { it.id }.forEach(database.routeDao()::upsert)
+
+                // Import the dependency graph before trips and legs.
+                packageData.business.flatMap { it.employments }.distinctBy { it.id }
+                    .forEach(database.employmentDao()::upsert)
+                packageData.business.flatMap { it.places }.distinctBy { it.id }
+                    .forEach(database.placeDao()::upsert)
+                packageData.business.flatMap { it.locations }.distinctBy { it.id }
+                    .forEach(database.businessLocationDao()::upsert)
+                packageData.business.flatMap { it.routes }.distinctBy { it.id }
+                    .forEach(database.routeDao()::upsert)
+
+                packageData.business
+                    .filter { plan.businessTrips[it.trip.date] == ImportAction.ADD || plan.businessTrips[it.trip.date] == ImportAction.DESTROY }
+                    .forEach {
+                        database.businessTripDao().upsert(it.trip)
+                        it.legs.forEach(database.businessTripLegDao()::upsert)
+                        bi++
+                    }
             }
             ImportResult(ci, bi, cd, bd)
         }
