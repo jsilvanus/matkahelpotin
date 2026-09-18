@@ -23,7 +23,6 @@ fun BusinessScreen(viewModel: BusinessViewModel) {
     val trips by viewModel.trips.collectAsState(emptyList())
     val legs by viewModel.legs.collectAsState(emptyList())
     val locations by viewModel.businessLocations.collectAsState(emptyList())
-    val reimbursementRates by viewModel.reimbursementRates.collectAsState(emptyList())
     val mileagePolicies by viewModel.mileagePolicies.collectAsState(emptyList())
     var weekStart by remember { mutableStateOf(LocalDate.now().with(WeekFields.ISO.dayOfWeek(), 1)) }
     var employmentId by remember { mutableStateOf<EntityId?>(null) }
