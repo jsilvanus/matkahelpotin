@@ -27,3 +27,12 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
         database.execSQL("ALTER TABLE business_trip ADD COLUMN mileageLimitMetersSnapshot INTEGER")
     }
 }
+
+
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE mileage_policy ADD COLUMN validFrom TEXT NOT NULL DEFAULT '2000-01-01'")
+        database.execSQL("ALTER TABLE mileage_policy ADD COLUMN validUntil TEXT")
+        database.execSQL("UPDATE mileage_policy SET validFrom = printf('%04d-01-01', year)")
+    }
+}
