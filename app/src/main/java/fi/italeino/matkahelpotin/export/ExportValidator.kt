@@ -24,8 +24,16 @@ object ExportValidator {
         val manifest = json.parseToJsonElement(files.getValue("manifest.json").decodeToString()).jsonObject
         require(manifest["format"]?.jsonPrimitive?.content == "matkahelpotin-travel-export") { "Unsupported export format" }
         require(manifest["formatVersion"]?.jsonPrimitive?.int == 1) { "Unsupported export format version" }
-        val datasets = manifest["datasets"]?.jsonArray?.map { it.jsonPrimitive.content }?.toSet()
+        require(manifest["schemaVersion"]?.jsonPrimitive?.int == 1) { "Unsupported export schema version" }
+        val dateRange = manifest["dateRange"]?.jsonObject ?: error("Manifest date range is missing")
+        val from = java.time.LocalDate.parse(dateRange["from"]?.jsonPrimitive?.content ?: error("Manifest date range is missing from"))
+        val until = java.time.LocalDate.parse(dateRange["until"]?.jsonPrimitive?.content ?: error("Manifest date range is missing until"))
+        require(!from.isAfter(until)) { "Manifest date range is invalid" }
+        val datasetValues = manifest["datasets"]?.jsonArray?.map { it.jsonPrimitive.content }
             ?: error("Manifest datasets are missing")
+        require(datasetValues.distinct().size == datasetValues.size) { "Manifest contains duplicate datasets" }
+        require(datasetValues.all { it == "commute" || it == "business-trips" }) { "Manifest contains an unsupported dataset" }
+        val datasets = datasetValues.toSet()
         require(datasets.isNotEmpty()) { "Manifest must contain at least one dataset" }
         require(("commute" in datasets) == ("commute.json" in files)) { "Commute dataset does not match archive contents" }
         require(("business-trips" in datasets) == ("business-trips.json" in files)) { "Business dataset does not match archive contents" }
@@ -35,6 +43,10 @@ object ExportValidator {
             require(root["schemaVersion"]?.jsonPrimitive?.int == 1) { "${name} has unsupported schema version" }
             require(root["dateRange"]?.jsonObject?.containsKey("from") == true) { "${name} has no date range" }
             require(root["dateRange"]?.jsonObject?.containsKey("until") == true) { "${name} has no date range" }
+            val range = root["dateRange"]!!.jsonObject
+            val datasetFrom = java.time.LocalDate.parse(range["from"]!!.jsonPrimitive.content)
+            val datasetUntil = java.time.LocalDate.parse(range["until"]!!.jsonPrimitive.content)
+            require(datasetFrom == from && datasetUntil == until) { "${name} date range differs from manifest" }
         }
 
         val checksums = json.parseToJsonElement(files.getValue("checksums.json").decodeToString()).jsonObject
