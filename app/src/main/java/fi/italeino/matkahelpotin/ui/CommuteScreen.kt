@@ -19,17 +19,30 @@ import java.time.YearMonth
 @Composable
 fun CommuteScreen(viewModel: CommuteViewModel) {
     val profiles by viewModel.profiles.collectAsState()
+    var employmentId by remember { mutableStateOf<EntityId?>(null) }
     val records by viewModel.records.collectAsState()
+    val employments = profiles.map { it.employmentId }.distinct()
     var month by remember { mutableStateOf(YearMonth.now()) }
     val days = (1..month.lengthOfMonth()).map(month::atDay)
     val leading = (month.atDay(1).dayOfWeek.value - DayOfWeek.MONDAY.value + 7) % 7
     val mileagePolicies by viewModel.mileagePolicies.collectAsState(emptyList())
-    val annualMileage = calculateAnnualCommuteMileageMeters(records, profiles, month.year)
+    LaunchedEffect(employments) { if (employmentId == null) employmentId = employments.firstOrNull() }
+    val visibleProfiles = profiles.filter { it.employmentId == employmentId }
+    val visibleRecords = records.filter { record -> visibleProfiles.any { it.id == record.commuteProfileId } }
+    val annualMileage = calculateAnnualCommuteMileageMeters(records, profiles, month.year, employmentId)
     val policy = selectMileagePolicy(mileagePolicies, month.atDay(1), scope = MileagePolicyScope.COMMUTE)
     val remaining = remainingMileageMeters(annualMileage, policy?.mileageLimitMeters)
 
     Scaffold(topBar = { TopAppBar(title = { Text("Commute") }) }) { padding ->
         Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (employments.size > 1) {
+                DropdownField("Employment", profiles.firstOrNull { it.employmentId == employmentId }?.let { p -> "${p.employmentId}" } ?: "Select", employments.map { it to it.toString() }) { employmentId = it }
+            }
+            Text("History", style = MaterialTheme.typography.titleMedium)
+            visibleRecords.filter { it.date.year == month.year }.sortedByDescending { it.date }.forEach { record ->
+                val profile = visibleProfiles.firstOrNull { it.id == record.commuteProfileId }
+                Text("${record.date}: ${record.tripCount} trips · ${"%.1f".format((record.distanceMetersSnapshot ?: 0L) / 1000.0)} km")
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = { month = month.minusMonths(1) }) { Text("‹") }
                 Text("${month.month.name.lowercase().replaceFirstChar { it.uppercase() }} ${month.year}", Modifier.padding(top = 12.dp))
@@ -43,8 +56,8 @@ fun CommuteScreen(viewModel: CommuteViewModel) {
                 LazyVerticalGrid(columns = GridCells.Fixed(7), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     items((0 until leading).toList()) { Spacer(Modifier.padding(4.dp)) }
                     items(days) { date ->
-                        val record = records.firstOrNull { it.date == date }
-                        val profile = record?.let { r -> profiles.firstOrNull { it.id == r.commuteProfileId } }
+                        val record = visibleRecords.firstOrNull { it.date == date }
+                        val profile = record?.let { r -> visibleProfiles.firstOrNull { it.id == r.commuteProfileId } }
                         DayCell(date, profile) { viewModel.cycleDay(date) }
                     }
                 }
