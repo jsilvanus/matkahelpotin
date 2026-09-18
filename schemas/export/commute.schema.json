@@ -17,7 +17,7 @@
     "instant":{"type":"string","format":"date-time"},
     "employment":{
       "type":"object","additionalProperties":false,
-      "required":["id","employerName","country","createdAt","updatedAt"],
+      "required":["id","employerName","createdAt","updatedAt"],
       "properties":{
         "id":{"$ref":"#/$defs/uuid"},"employerName":{"type":"string"},
         "employerIdentifier":{"type":["string","null"]},"description":{"type":["string","null"]},
