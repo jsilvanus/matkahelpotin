@@ -3,10 +3,11 @@ package fi.italeino.matkahelpotin
 import android.app.Application
 import androidx.room.Room
 import fi.italeino.matkahelpotin.data.*
-import fi.italeino.matkahelpotin.data.local.MatkahelpotinDatabase
 import fi.italeino.matkahelpotin.data.local.MIGRATION_1_2
 import fi.italeino.matkahelpotin.data.local.MIGRATION_2_3
 import fi.italeino.matkahelpotin.data.local.MIGRATION_3_4
+import fi.italeino.matkahelpotin.data.local.MIGRATION_4_5
+import fi.italeino.matkahelpotin.data.local.MatkahelpotinDatabase
 
 class MatkahelpotinApplication : Application() {
     val database: MatkahelpotinDatabase by lazy { Room.databaseBuilder(this, MatkahelpotinDatabase::class.java, "matkahelpotin.db")
@@ -24,4 +25,3 @@ class MatkahelpotinApplication : Application() {
     val reimbursementRateRepository by lazy { RoomReimbursementRateRepository(database.reimbursementRateDao()) }
     val mileagePolicyRepository by lazy { RoomMileagePolicyRepository(database.mileagePolicyDao()) }
 }
-
