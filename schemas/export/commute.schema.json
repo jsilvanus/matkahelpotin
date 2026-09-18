@@ -1,0 +1,9 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "type":"object",
+  "required":["schemaVersion","dateRange","employments","places","profiles","records"],
+  "properties":{
+    "schemaVersion":{"const":1},"dateRange":{"$ref":"manifest.schema.json#/$defs/dateRange"},
+    "employments":{"type":"array"},"places":{"type":"array"},"profiles":{"type":"array"},"records":{"type":"array"}
+  }
+}
