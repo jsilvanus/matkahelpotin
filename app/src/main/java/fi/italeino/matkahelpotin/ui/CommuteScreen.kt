@@ -11,7 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import fi.italeino.matkahelpotin.domain.CommuteProfile
+import fi.italeino.matkahelpotin.domain.*
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -23,6 +23,10 @@ fun CommuteScreen(viewModel: CommuteViewModel) {
     var month by remember { mutableStateOf(YearMonth.now()) }
     val days = (1..month.lengthOfMonth()).map(month::atDay)
     val leading = (month.atDay(1).dayOfWeek.value - DayOfWeek.MONDAY.value + 7) % 7
+    val mileagePolicies by viewModel.mileagePolicies.collectAsState(emptyList())
+    val annualMileage = calculateAnnualCommuteMileageMeters(records, profiles, month.year)
+    val policy = selectMileagePolicy(mileagePolicies, month.atDay(1), scope = MileagePolicyScope.COMMUTE)
+    val remaining = remainingMileageMeters(annualMileage, policy?.mileageLimitMeters)
 
     Scaffold(topBar = { TopAppBar(title = { Text("Commute") }) }) { padding ->
         Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -31,6 +35,8 @@ fun CommuteScreen(viewModel: CommuteViewModel) {
                 Text("${month.month.name.lowercase().replaceFirstChar { it.uppercase() }} ${month.year}", Modifier.padding(top = 12.dp))
                 Button(onClick = { month = month.plusMonths(1) }) { Text("›") }
             }
+            Text("Annual commute mileage: ${"%.1f".format(annualMileage / 1000.0)} km")
+            policy?.mileageLimitMeters?.let { Text("Annual commute limit: ${"%.1f".format(it / 1000.0)} km; remaining: ${"%.1f".format((remaining ?: 0L) / 1000.0)} km") }
             if (profiles.isEmpty()) {
                 Text("Configure a commute profile in Settings first.")
             } else {
