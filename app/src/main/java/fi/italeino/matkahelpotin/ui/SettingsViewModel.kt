@@ -41,9 +41,19 @@ class SettingsViewModel(
         viewModelScope.launch { reimbursementRateRepository.upsert(ReimbursementRate(type = "KM", amountCents = amountCentsPerKm, validFrom = validFrom)) }
     }
 
-    fun addMileagePolicy(year: Int, rateCentsPerKm: Long, limitMeters: Long?) {
+    fun addMileagePolicy(year: Int, rateCentsPerKm: Long, limitMeters: Long?, validFrom: java.time.LocalDate = java.time.LocalDate.of(year, 1, 1), validUntil: java.time.LocalDate? = null) {
         if (year < 2000 || rateCentsPerKm < 0 || limitMeters != null && limitMeters < 0) return
-        viewModelScope.launch { mileagePolicyRepository.upsert(MileagePolicy(year = year, mileageRateCentsPerKm = rateCentsPerKm, mileageLimitMeters = limitMeters)) }
+        viewModelScope.launch {
+            mileagePolicyRepository.upsert(
+                MileagePolicy(
+                    year = year,
+                    mileageRateCentsPerKm = rateCentsPerKm,
+                    mileageLimitMeters = limitMeters,
+                    validFrom = validFrom,
+                    validUntil = validUntil,
+                )
+            )
+        }
     }
 
     companion object {
