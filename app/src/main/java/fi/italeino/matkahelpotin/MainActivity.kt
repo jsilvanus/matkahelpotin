@@ -25,6 +25,7 @@ class MainActivity : ComponentActivity() {
                             NavigationBarItem(selectedTab == 0, { selectedTab = 0 }, icon = {}, label = { Text("Commute") })
                             NavigationBarItem(selectedTab == 1, { selectedTab = 1 }, icon = {}, label = { Text("Business") })
                             NavigationBarItem(selectedTab == 2, { selectedTab = 2 }, icon = {}, label = { Text("Settings") })
+                            NavigationBarItem(selectedTab == 3, { selectedTab = 3 }, icon = {}, label = { Text("Export") })
                         }
                     },
                 ) { padding ->
@@ -36,7 +37,8 @@ class MainActivity : ComponentActivity() {
                                     CommuteViewModel(app.commuteProfileRepository, app.commuteRecordRepository, app.mileagePolicyRepository) as T
                             }))
                             1 -> BusinessScreen(viewModel(factory = BusinessViewModel.factory(app)))
-                            else -> SettingsScreen(viewModel(factory = SettingsViewModel.factory(app)))
+                            2 -> SettingsScreen(viewModel(factory = SettingsViewModel.factory(app)))
+                            else -> ExportScreen(viewModel(factory = fi.italeino.matkahelpotin.export.ExportViewModel.factory(app)))
                         }
                     }
                 }
