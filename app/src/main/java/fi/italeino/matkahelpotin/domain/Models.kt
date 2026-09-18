@@ -280,7 +280,7 @@ fun selectMileagePolicy(policies: List<MileagePolicy>, date: LocalDate, jurisdic
     policies
         .filter {
             it.jurisdiction == jurisdiction &&
-                it.scope == MileagePolicyScope.BUSINESS_TRIP &&
+                it.scope == scope &&
                 !date.isBefore(it.validFrom) &&
                 (it.validUntil == null || date.isBefore(it.validUntil))
         }
