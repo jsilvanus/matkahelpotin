@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import fi.italeino.matkahelpotin.data.local.*
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -70,6 +71,12 @@ class ImportRoundTripTest {
             )
             target.commuteRecordDao().upsert(CommuteRecordEntity(oldCommuteId, date, profileId, 99, 999000, null, now))
             target.commuteRecordDao().upsert(CommuteRecordEntity(UUID.randomUUID(), date.minusDays(1), profileId, 7, 84000, null, now))
+            val oldTripId = UUID.randomUUID()
+            val oldLegId = UUID.randomUUID()
+            target.businessLocationDao().upsert(BusinessLocationEntity(locationId, employmentId, workId, "WORK", true))
+            target.routeDao().upsert(RouteEntity(routeId, homeId, workId, 12000, 600, "EMPLOYER_DEFINED", null, null))
+            target.businessTripDao().upsert(BusinessTripEntity(oldTripId, date, employmentId, "Old meeting", "PRIVATE_CAR", null, null, null, null, null, now))
+            target.businessTripLegDao().upsert(BusinessTripLegEntity(oldLegId, oldTripId, 0, homeId, workId, null, null, 12000, "EMPLOYER_DEFINED", null, null, null, "PRIVATE_CAR"))
 
             val service = ExportService(
                 fi.italeino.matkahelpotin.data.RoomEmploymentRepository(source.employmentDao()),
@@ -96,7 +103,7 @@ class ImportRoundTripTest {
             assertEquals(1, result.commuteImported)
             assertEquals(1, result.businessTripsImported)
             assertEquals(1, result.commuteDestroyed)
-            assertEquals(0, result.businessTripsDestroyed)
+            assertEquals(1, result.businessTripsDestroyed)
             assertEquals(listOf(commuteId), target.commuteRecordDao().observeAll().first().map { it.id })
             assertEquals(listOf(tripId), target.businessTripDao().observeAll().first().map { it.id })
             assertEquals(listOf(legId), target.businessTripLegDao().observeAll().first().map { it.id })
