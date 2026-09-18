@@ -23,6 +23,8 @@ fun BusinessScreen(viewModel: BusinessViewModel) {
     val trips by viewModel.trips.collectAsState(emptyList())
     val legs by viewModel.legs.collectAsState(emptyList())
     val locations by viewModel.businessLocations.collectAsState(emptyList())
+    val reimbursementRates by viewModel.reimbursementRates.collectAsState(emptyList())
+    val mileagePolicies by viewModel.mileagePolicies.collectAsState(emptyList())
     var weekStart by remember { mutableStateOf(LocalDate.now().with(WeekFields.ISO.dayOfWeek(), 1)) }
     var employmentId by remember { mutableStateOf<EntityId?>(null) }
     var mode by remember { mutableStateOf(BusinessMode.WEEK) }
@@ -60,11 +62,17 @@ fun BusinessScreen(viewModel: BusinessViewModel) {
                     Text("Week total: ${"%.1f".format(weeklyMeters / 1000.0)} km")
                     Text("Month total (${monthStart.monthValue}/${monthStart.year}): ${"%.1f".format(monthlyMeters / 1000.0)} km")
                     val annualMeters = calculateAnnualMileageMeters(trips, legs, weekStart.year, employmentId)
-                    val annualPolicy = trips.filter { it.employmentId == employmentId && it.date.year == weekStart.year }
-                        .mapNotNull { it.mileageLimitMetersSnapshot }.firstOrNull()
-                    val remaining = remainingMileageMeters(annualMeters, annualPolicy)
+                    val annualPolicy = selectAnnualMileagePolicy(mileagePolicies, weekStart.year, weekStart)
+                    val annualLimit = annualPolicy?.mileageLimitMeters
+                    val remaining = remainingMileageMeters(annualMeters, annualLimit)
+                    val annualReimbursement = trips.filter {
+                        it.employmentId == employmentId && it.date.year == weekStart.year
+                    }.sumOf { trip ->
+                        calculateBusinessTripReimbursementCents(trip, legs) ?: 0L
+                    }
                     Text("Annual mileage: ${"%.1f".format(annualMeters / 1000.0)} km")
-                    annualPolicy?.let { Text("Annual limit: ${"%.1f".format(it / 1000.0)} km; remaining: ${"%.1f".format((remaining ?: 0L) / 1000.0)} km") }
+                    annualLimit?.let { Text("Annual limit: ${"%.1f".format(it / 1000.0)} km; remaining: ${"%.1f".format((remaining ?: 0L) / 1000.0)} km") }
+                    Text("Annual reimbursement: €${"%.2f".format(annualReimbursement / 100.0)}")
                 }
                 BusinessMode.HISTORY -> BusinessHistory(trips, legs, placeNames, employmentId!!)
                 BusinessMode.SETUP -> BusinessSetup(viewModel, selectedEmployment!!, places, locations, routes, placeNames)
