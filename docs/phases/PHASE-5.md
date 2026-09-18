@@ -64,7 +64,7 @@ Export selected trips and referenced data:
 - manual overrides;
 - reimbursement snapshots;
 - mileage-policy snapshots;
-- arbitrary origin/destination addresses and coordinates where present.
+- arbitrary origin/destination addresses where present.
 
 The historical effective distance is authoritative; consumers must not recalculate it from current routes or policies.
 
@@ -99,7 +99,7 @@ Export UI
           -> repositories
           -> export DTOs
           -> JSON serialization
-          -> schema validation
+          -> contract validation
           -> ZIP writer
           -> SHA-256
           -> Storage Access Framework
@@ -127,8 +127,9 @@ Generate `checksums.json` containing SHA-256 for every other file actually prese
 Before saving:
 1. build export DTOs;
 2. serialize JSON;
-3. validate every JSON document against its schema;
-4. calculate checksums;
+3. validate archive structure, versions, date ranges and checksums;
+4. keep the versioned JSON Schemas as the independent interchange contract;
+5. calculate checksums;
 5. write the ZIP;
 6. verify archive contents and checksums;
 7. expose success/failure to the user.
@@ -155,10 +156,14 @@ Integration tests:
 - ZIP contents;
 - checksum verification;
 - omitted datasets;
+- import dependency ordering;
+- ADD / DESTROY / NONE date semantics;
+- export → import reconstruction;
+- date-scoped DESTROY behaviour;
 - independent reconstruction of exported data.
 
 Regression tests must cover multiple employments/profiles, public transport, employer-defined routes, multi-leg trips, routing distances, manual overrides, and later policy/configuration changes.
 
 ## Exit criteria
 
-Phase 5 is complete when a user can select any date range and either/both datasets and Android produces a valid ZIP whose schemas and checksums verify independently, with historical snapshots and provenance unchanged.
+Phase 5 is complete when a user can select any date range and either/both datasets, produce a validated ZIP, inspect an import by date, choose ADD / DESTROY / NONE per dataset/date, and import it atomically without changing historical snapshots or distance provenance.
