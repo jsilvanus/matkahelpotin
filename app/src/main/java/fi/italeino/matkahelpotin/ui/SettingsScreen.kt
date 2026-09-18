@@ -58,7 +58,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     if (cents != null) { viewModel.addMileagePolicy(java.time.LocalDate.now().year, cents, limit); mileageRate = ""; mileageLimit = "" }
                 }) { Text("Add mileage policy for current year") }
                 reimbursementRates.forEach { rate -> Text("Reimbursement: " + (rate.amountCents / 100.0) + " €/km from " + rate.validFrom) }
-                mileagePolicies.forEach { policy -> Text("Mileage " + policy.year + ": " + (policy.mileageRateCentsPerKm / 100.0) + " €/km" + (policy.mileageLimitMeters?.let { m -> ", limit " + (m / 1000) + " km" } ?: "")) }
+                mileagePolicies.forEach { policy -> Text("Mileage " + policy.year + " from " + policy.validFrom + ": " + (policy.mileageRateCentsPerKm / 100.0) + " €/km" + (policy.mileageLimitMeters?.let { m -> ", limit " + (m / 1000) + " km" } ?: "")) }
             }
 
             item { Text("Employments", style = MaterialTheme.typography.titleMedium) }
