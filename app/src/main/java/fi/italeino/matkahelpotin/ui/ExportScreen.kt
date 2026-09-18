@@ -36,7 +36,7 @@ fun ExportScreen(viewModel: ExportViewModel) {
         Button(enabled = !state.busy, onClick = {
             runCatching { LocalDate.parse(from) }.onSuccess { start ->
                 runCatching { LocalDate.parse(until) }.onSuccess { end ->
-                    viewModel.export(start, end, commute, business, "0.1.0")
+                    viewModel.export(start, end, commute, business, fi.italeino.matkahelpotin.BuildConfig.VERSION_NAME)
                 }
             }
         }) { Text(if (state.busy) "Building…" else "Build export") }
