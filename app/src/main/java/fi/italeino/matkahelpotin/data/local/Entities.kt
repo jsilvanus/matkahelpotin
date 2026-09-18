@@ -51,7 +51,7 @@ data class VehicleEntity(@PrimaryKey val id: java.util.UUID, val name: String, v
 @Entity(tableName = "reimbursement_rate")
 data class ReimbursementRateEntity(@PrimaryKey val id: java.util.UUID, val type: String, val amountCents: Long, val currency: String, val unit: String, val validFrom: LocalDate, val validUntil: LocalDate?, val jurisdiction: String)
 @Entity(tableName = "mileage_policy")
-data class MileagePolicyEntity(@PrimaryKey val id: java.util.UUID, val year: Int, val mileageLimitMeters: Long?, val mileageRateCentsPerKm: Long, val jurisdiction: String)
+data class MileagePolicyEntity(@PrimaryKey val id: java.util.UUID, val year: Int, val mileageLimitMeters: Long?, val mileageRateCentsPerKm: Long, val jurisdiction: String, val validFrom: LocalDate, val validUntil: LocalDate?)
 
 @Dao interface EmploymentDao { @Query("SELECT * FROM employment ORDER BY employerName") fun observeAll(): Flow<List<EmploymentEntity>>; @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(value: EmploymentEntity) }
 @Dao interface PlaceDao { @Query("SELECT * FROM place ORDER BY name") fun observeAll(): Flow<List<PlaceEntity>>; @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(value: PlaceEntity) }
