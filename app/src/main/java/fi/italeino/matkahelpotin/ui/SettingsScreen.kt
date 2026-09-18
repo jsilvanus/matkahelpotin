@@ -23,6 +23,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
     var reimbursement by remember { mutableStateOf("") }
     var mileageRate by remember { mutableStateOf("") }
     var mileageLimit by remember { mutableStateOf("") }
+    var commuteMileageLimit by remember { mutableStateOf("") }
 
     Scaffold(topBar = { TopAppBar(title = { Text("Matkahelpotin") }) }) { padding ->
         LazyColumn(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -51,14 +52,23 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     if (cents != null) { viewModel.addReimbursementRate(cents, java.time.LocalDate.now()); reimbursement = "" }
                 }) { Text("Add reimbursement rate") }
                 OutlinedTextField(mileageRate, { mileageRate = it }, label = { Text("Mileage rate (€/km)") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(mileageLimit, { mileageLimit = it }, label = { Text("Annual mileage limit (km, optional)") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(mileageLimit, { mileageLimit = it }, label = { Text("Business-trip annual mileage limit (km, optional)") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(commuteMileageLimit, { commuteMileageLimit = it }, label = { Text("Commute annual mileage limit (km, optional)") }, modifier = Modifier.fillMaxWidth())
                 Button(onClick = {
                     val cents = mileageRate.replace(',', '.').toDoubleOrNull()?.let { (it * 100).toLong() }
                     val limit = mileageLimit.replace(',', '.').toDoubleOrNull()?.let { (it * 1000).toLong() }
-                    if (cents != null) { viewModel.addMileagePolicy(java.time.LocalDate.now().year, cents, limit); mileageRate = ""; mileageLimit = "" }
+                    if (cents != null) {
+                        viewModel.addMileagePolicy(java.time.LocalDate.now().year, cents, limit, MileagePolicyScope.BUSINESS_TRIP)
+                        mileageRate = ""; mileageLimit = ""
+                    }
+                    val commuteLimit = commuteMileageLimit.replace(',', '.').toDoubleOrNull()?.let { (it * 1000).toLong() }
+                    if (commuteLimit != null) {
+                        viewModel.addMileagePolicy(java.time.LocalDate.now().year, 0L, commuteLimit, MileagePolicyScope.COMMUTE)
+                        commuteMileageLimit = ""
+                    }
                 }) { Text("Add mileage policy for current year") }
                 reimbursementRates.forEach { rate -> Text("Reimbursement: " + (rate.amountCents / 100.0) + " €/km from " + rate.validFrom) }
-                mileagePolicies.forEach { policy -> Text("Mileage " + policy.year + " from " + policy.validFrom + ": " + (policy.mileageRateCentsPerKm / 100.0) + " €/km" + (policy.mileageLimitMeters?.let { m -> ", limit " + (m / 1000) + " km" } ?: "")) }
+                mileagePolicies.forEach { policy -> Text((if (policy.scope == MileagePolicyScope.COMMUTE) "Commute mileage " else "Business mileage ") + policy.year + " from " + policy.validFrom + ": " + (policy.mileageRateCentsPerKm / 100.0) + " €/km" + (policy.mileageLimitMeters?.let { m -> ", limit " + (m / 1000) + " km" } ?: "")) }
             }
 
             item { Text("Employments", style = MaterialTheme.typography.titleMedium) }
