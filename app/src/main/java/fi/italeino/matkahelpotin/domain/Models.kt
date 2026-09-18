@@ -11,6 +11,7 @@ enum class TransportMode { PRIVATE_CAR, PUBLIC_TRANSPORT }
 enum class RouteSource { EMPLOYER_DEFINED, MAP_PROVIDER, MANUAL }
 
 enum class DistanceSource { EMPLOYER_DEFINED, ROUTING_PROVIDER, MANUAL_OVERRIDE }
+enum class MileagePolicyScope { COMMUTE, BUSINESS_TRIP }
 
 data class Employment(
     val id: EntityId = UUID.randomUUID(),
@@ -148,6 +149,7 @@ data class MileagePolicy(
     val mileageLimitMeters: Long? = null,
     val mileageRateCentsPerKm: Long,
     val jurisdiction: String = "FI",
+    val scope: MileagePolicyScope = MileagePolicyScope.BUSINESS_TRIP,
     val validFrom: LocalDate = LocalDate.of(year, 1, 1),
     val validUntil: LocalDate? = null,
 ) {
@@ -278,6 +280,7 @@ fun selectMileagePolicy(policies: List<MileagePolicy>, date: LocalDate, jurisdic
     policies
         .filter {
             it.jurisdiction == jurisdiction &&
+                it.scope == MileagePolicyScope.BUSINESS_TRIP &&
                 !date.isBefore(it.validFrom) &&
                 (it.validUntil == null || date.isBefore(it.validUntil))
         }
@@ -288,9 +291,10 @@ fun selectAnnualMileagePolicy(
     year: Int,
     asOf: LocalDate,
     jurisdiction: String = "FI",
+    scope: MileagePolicyScope = MileagePolicyScope.BUSINESS_TRIP,
 ): MileagePolicy? {
     require(asOf.year == year || asOf.year == year + 1) { "asOf must be within the policy year or its following year" }
-    return selectMileagePolicy(policies, asOf.coerceAtMost(LocalDate.of(year, 12, 31)), jurisdiction)
+    return selectMileagePolicy(policies, asOf.coerceAtMost(LocalDate.of(year, 12, 31)), jurisdiction, MileagePolicyScope.BUSINESS_TRIP)
         ?.takeIf { it.year == year }
 }
 
@@ -342,3 +346,17 @@ fun remainingMileageMeters(
     require(mileageLimitMeters >= 0)
     return (mileageLimitMeters - annualMileageMeters).coerceAtLeast(0)
 }
+
+
+fun calculateAnnualCommuteMileageMeters(
+    records: List<CommuteRecord>,
+    profiles: List<CommuteProfile>,
+    year: Int,
+): Long =
+    records.filter { it.date.year == year }
+        .sumOf { record ->
+            val profile = profiles.firstOrNull { it.id == record.commuteProfileId }
+            if (profile?.transportMode == TransportMode.PRIVATE_CAR) {
+                (record.distanceMetersSnapshot ?: 0L) * record.tripCount
+            } else 0L
+        }
