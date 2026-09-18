@@ -1,0 +1,9 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "type":"object",
+  "required":["schemaVersion","dateRange","employments","places","businessLocations","routes","trips","legs"],
+  "properties":{
+    "schemaVersion":{"const":1},"dateRange":{"$ref":"manifest.schema.json#/$defs/dateRange"},
+    "employments":{"type":"array"},"places":{"type":"array"},"businessLocations":{"type":"array"},"routes":{"type":"array"},"trips":{"type":"array"},"legs":{"type":"array"}
+  }
+}
