@@ -13,6 +13,35 @@ class ReimbursementPolicyTest {
     }
 
     @Test
+    fun rateValidityUsesExclusiveEndDate() {
+        val rate = ReimbursementRate(
+            type = "KM",
+            amountCents = 50,
+            validFrom = LocalDate.of(2026, 1, 1),
+            validUntil = LocalDate.of(2026, 7, 1),
+        )
+        assertEquals(null, selectReimbursementRate(listOf(rate), LocalDate.of(2026, 7, 1)))
+    }
+
+    @Test
+    fun mileagePolicyValidityUsesLatestEffectiveVersion() {
+        val old = MileagePolicy(
+            year = 2026,
+            mileageRateCentsPerKm = 50,
+            mileageLimitMeters = 500_000,
+            validFrom = LocalDate.of(2026, 1, 1),
+        )
+        val current = MileagePolicy(
+            year = 2026,
+            mileageRateCentsPerKm = 53,
+            mileageLimitMeters = 600_000,
+            validFrom = LocalDate.of(2026, 7, 1),
+        )
+        assertEquals(current.id, selectMileagePolicy(listOf(old, current), LocalDate.of(2026, 9, 18))?.id)
+        assertEquals(old.id, selectMileagePolicy(listOf(old, current), LocalDate.of(2026, 6, 30))?.id)
+    }
+
+    @Test
     fun snapshotsRateAndMileagePolicy() {
         val trip = BusinessTrip(date = LocalDate.of(2026,9,18), employmentId = java.util.UUID.randomUUID())
         val rate = ReimbursementRate(type = "KM", amountCents = 53, validFrom = LocalDate.of(2026,1,1))
