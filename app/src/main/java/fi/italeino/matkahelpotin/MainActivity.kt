@@ -33,7 +33,7 @@ class MainActivity : ComponentActivity() {
                             0 -> CommuteScreen(viewModel(factory = object : androidx.lifecycle.ViewModelProvider.Factory {
                                 @Suppress("UNCHECKED_CAST")
                                 override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T =
-                                    CommuteViewModel(app.commuteProfileRepository, app.commuteRecordRepository) as T
+                                    CommuteViewModel(app.commuteProfileRepository, app.commuteRecordRepository, app.mileagePolicyRepository) as T
                             }))
                             1 -> BusinessScreen(viewModel(factory = BusinessViewModel.factory(app)))
                             else -> SettingsScreen(viewModel(factory = SettingsViewModel.factory(app)))
