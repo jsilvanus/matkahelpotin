@@ -67,6 +67,22 @@ class MileageCalculationTest {
     }
 
     @Test
+    fun commuteMileageCountsOnlyPrivateCarRecordsAndTripDistance() {
+        val profile = CommuteProfile(
+            employmentId = UUID.randomUUID(), homePlaceId = UUID.randomUUID(), workplaceId = UUID.randomUUID(),
+            transportMode = TransportMode.PRIVATE_CAR, distanceMeters = 25_000, tripsPerDay = 2,
+        )
+        val record = CommuteRecord(date = LocalDate.of(2026, 9, 18), commuteProfileId = profile.id, tripCount = 2, distanceMetersSnapshot = 25_000)
+        assertEquals(50_000L, calculateAnnualCommuteMileageMeters(listOf(record), listOf(profile), 2026))
+    }
+
+    @Test
+    fun commutePolicyDoesNotGetSelectedForBusinessMileage() {
+        val commute = MileagePolicy(year = 2026, mileageRateCentsPerKm = 0, mileageLimitMeters = 100_000, scope = MileagePolicyScope.COMMUTE)
+        assertEquals(null, selectAnnualMileagePolicy(listOf(commute), 2026, LocalDate.of(2026, 9, 18)))
+    }
+
+    @Test
     fun noLimitMeansNoRemainingLimit() {
         assertEquals(null, remainingMileageMeters(123, null))
     }
