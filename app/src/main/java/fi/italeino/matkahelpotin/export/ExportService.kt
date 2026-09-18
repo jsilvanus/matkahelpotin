@@ -90,7 +90,7 @@ class ExportService(
         files["manifest.json"] = Json.encodeToString(manifest)
         val hashes = files.mapValues { sha256(it.value.toByteArray(Charsets.UTF_8)) }
         files["checksums.json"] = Json.encodeToString(Checksums("SHA-256", hashes))
-        return zip(files)
+        return zip(files).also(ExportValidator::validateZip)
     }
 
     private fun employmentJson(v: Employment) = buildJsonObject {
