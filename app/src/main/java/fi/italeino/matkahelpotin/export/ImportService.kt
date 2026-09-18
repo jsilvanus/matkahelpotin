@@ -37,6 +37,7 @@ class ImportService(private val database: MatkahelpotinDatabase) {
 
         val from = LocalDate.parse(manifest.dateRange.from)
         val until = LocalDate.parse(manifest.dateRange.until)
+        require(manifest.datasets.distinct().size == manifest.datasets.size) { "Manifest contains duplicate datasets" }
         val datasets = manifest.datasets.map {
             when (it) {
                 "commute" -> ExportDataset.COMMUTE
@@ -60,8 +61,9 @@ class ImportService(private val database: MatkahelpotinDatabase) {
         )
     }
 
-    suspend fun import(packageData: ImportPackage, plan: ImportPlan): ImportResult =
-        database.withTransaction {
+    suspend fun import(packageData: ImportPackage, plan: ImportPlan): ImportResult {
+        validatePlan(packageData, plan)
+        return database.withTransaction {
             var ci = 0
             var bi = 0
             var cd = 0
@@ -118,6 +120,16 @@ class ImportService(private val database: MatkahelpotinDatabase) {
             }
             ImportResult(ci, bi, cd, bd)
         }
+    }
+
+    private fun validatePlan(packageData: ImportPackage, plan: ImportPlan) {
+        val commuteDates = packageData.commute.map { it.date }.toSet()
+        val businessDates = packageData.business.map { it.trip.date }.toSet()
+        require(plan.commute.keys.all { it in commuteDates }) { "Import plan contains a commute date not present in the package" }
+        require(plan.businessTrips.keys.all { it in businessDates }) { "Import plan contains a business-trip date not present in the package" }
+        require(plan.commute.keys.all { it in packageData.from..packageData.until })
+        require(plan.businessTrips.keys.all { it in packageData.from..packageData.until })
+    }
 
     data class ImportPackage(
         val from: LocalDate, val until: LocalDate, val datasets: Set<ExportDataset>,
