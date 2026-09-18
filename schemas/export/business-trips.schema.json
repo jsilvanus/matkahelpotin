@@ -1,9 +1,69 @@
 {
   "$schema":"https://json-schema.org/draft/2020-12/schema",
   "type":"object",
+  "additionalProperties":false,
   "required":["schemaVersion","dateRange","employments","places","businessLocations","routes","trips","legs"],
   "properties":{
-    "schemaVersion":{"const":1},"dateRange":{"$ref":"manifest.schema.json#/$defs/dateRange"},
-    "employments":{"type":"array"},"places":{"type":"array"},"businessLocations":{"type":"array"},"routes":{"type":"array"},"trips":{"type":"array"},"legs":{"type":"array"}
+    "schemaVersion":{"const":1},
+    "dateRange":{"$ref":"manifest.schema.json#/$defs/dateRange"},
+    "employments":{"type":"array","items":{"$ref":"#/$defs/employment"}},
+    "places":{"type":"array","items":{"$ref":"#/$defs/place"}},
+    "businessLocations":{"type":"array","items":{"$ref":"#/$defs/businessLocation"}},
+    "routes":{"type":"array","items":{"$ref":"#/$defs/route"}},
+    "trips":{"type":"array","items":{"$ref":"#/$defs/trip"}},
+    "legs":{"type":"array","items":{"$ref":"#/$defs/leg"}}
+  },
+  "$defs":{
+    "uuid":{"type":"string","format":"uuid"},"date":{"type":"string","format":"date"},"instant":{"type":"string","format":"date-time"},
+    "employment":{
+      "type":"object","additionalProperties":false,"required":["id","employerName","createdAt","updatedAt"],
+      "properties":{
+        "id":{"$ref":"#/$defs/uuid"},"employerName":{"type":"string"},"employerIdentifier":{"type":["string","null"]},
+        "description":{"type":["string","null"]},"activeFrom":{"type":["string","null"],"format":"date"},"activeUntil":{"type":["string","null"],"format":"date"},
+        "createdAt":{"$ref":"#/$defs/instant"},"updatedAt":{"$ref":"#/$defs/instant"}
+      }
+    },
+    "place":{
+      "type":"object","additionalProperties":false,"required":["id","name","type","country","createdAt","updatedAt"],
+      "properties":{
+        "id":{"$ref":"#/$defs/uuid"},"name":{"type":"string"},"type":{"type":"string"},"address":{"type":["string","null"]},
+        "postalCode":{"type":["string","null"]},"city":{"type":["string","null"]},"country":{"type":"string"},
+        "latitude":{"type":["number","null"]},"longitude":{"type":["number","null"]},"source":{"type":["string","null"]},
+        "createdAt":{"$ref":"#/$defs/instant"},"updatedAt":{"$ref":"#/$defs/instant"}
+      }
+    },
+    "businessLocation":{
+      "type":"object","additionalProperties":false,"required":["id","employmentId","placeId","active"],
+      "properties":{"id":{"$ref":"#/$defs/uuid"},"employmentId":{"$ref":"#/$defs/uuid"},"placeId":{"$ref":"#/$defs/uuid"},"code":{"type":["string","null"]},"active":{"type":"boolean"}}
+    },
+    "route":{
+      "type":"object","additionalProperties":false,"required":["id","fromPlaceId","toPlaceId","distanceMeters","source"],
+      "properties":{
+        "id":{"$ref":"#/$defs/uuid"},"fromPlaceId":{"$ref":"#/$defs/uuid"},"toPlaceId":{"$ref":"#/$defs/uuid"},
+        "distanceMeters":{"type":"integer","minimum":0},"durationSeconds":{"type":["integer","null"],"minimum":0},
+        "source":{"type":"string"},"effectiveFrom":{"type":["string","null"],"format":"date"},"effectiveUntil":{"type":["string","null"],"format":"date"}
+      }
+    },
+    "trip":{
+      "type":"object","additionalProperties":false,"required":["id","date","employmentId","transportMode","createdAt"],
+      "properties":{
+        "id":{"$ref":"#/$defs/uuid"},"date":{"$ref":"#/$defs/date"},"employmentId":{"$ref":"#/$defs/uuid"},
+        "purpose":{"type":["string","null"]},"transportMode":{"type":"string"},
+        "reimbursementRateIdSnapshot":{"type":["string","null"],"format":"uuid"},"reimbursementRateCentsPerKmSnapshot":{"type":["integer","null"]},
+        "mileagePolicyIdSnapshot":{"type":["string","null"],"format":"uuid"},"mileageRateCentsPerKmSnapshot":{"type":["integer","null"]},
+        "mileageLimitMetersSnapshot":{"type":["integer","null"]},"createdAt":{"$ref":"#/$defs/instant"}
+      }
+    },
+    "leg":{
+      "type":"object","additionalProperties":false,"required":["id","businessTripId","sequence","distanceMeters","distanceSource","transportMode"],
+      "properties":{
+        "id":{"$ref":"#/$defs/uuid"},"businessTripId":{"$ref":"#/$defs/uuid"},"sequence":{"type":"integer","minimum":0},
+        "fromPlaceId":{"type":["string","null"],"format":"uuid"},"toPlaceId":{"type":["string","null"],"format":"uuid"},
+        "fromAddress":{"type":["string","null"]},"toAddress":{"type":["string","null"]},"distanceMeters":{"type":"integer","minimum":0},
+        "distanceSource":{"type":"string"},"calculatedDistanceMeters":{"type":["integer","null"],"minimum":0},
+        "calculatedDistanceProvider":{"type":["string","null"]},"manualDistanceOverrideMeters":{"type":["integer","null"],"minimum":0},
+        "transportMode":{"type":"string"}
+      }
+    }
   }
 }
