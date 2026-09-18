@@ -1,2 +1,10 @@
-import { defineConfig } from "vitest";
-export default defineConfig({test:{environment:"happy-dom"}});
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: "happy-dom",
+    passWithNoTests: true,
+  },
+});
