@@ -36,12 +36,7 @@ fun CommuteScreen(viewModel: CommuteViewModel) {
     Scaffold(topBar = { TopAppBar(title = { Text("Commute") }) }) { padding ->
         Column(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (employments.size > 1) {
-                DropdownField("Employment", profiles.firstOrNull { it.employmentId == employmentId }?.let { p -> "${p.employmentId}" } ?: "Select", employments.map { it to it.toString() }) { employmentId = it }
-            }
-            Text("History", style = MaterialTheme.typography.titleMedium)
-            visibleRecords.filter { it.date.year == month.year }.sortedByDescending { it.date }.forEach { record ->
-                val profile = visibleProfiles.firstOrNull { it.id == record.commuteProfileId }
-                Text("${record.date}: ${record.tripCount} trips · ${"%.1f".format((record.distanceMetersSnapshot ?: 0L) / 1000.0)} km")
+                EmploymentDropdown(employments, employmentId) { employmentId = it }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = { month = month.minusMonths(1) }) { Text("‹") }
@@ -58,10 +53,25 @@ fun CommuteScreen(viewModel: CommuteViewModel) {
                     items(days) { date ->
                         val record = visibleRecords.firstOrNull { it.date == date }
                         val profile = record?.let { r -> visibleProfiles.firstOrNull { it.id == r.commuteProfileId } }
-                        DayCell(date, profile) { viewModel.cycleDay(date) }
+                        DayCell(date, profile) { viewModel.cycleDay(date, employmentId) }
                     }
                 }
             }
+            Text("History", style = MaterialTheme.typography.titleMedium)
+            visibleRecords.filter { it.date.year == month.year }.sortedByDescending { it.date }.forEach { record ->
+                Text("${record.date}: ${record.tripCount} trips · ${"%.1f".format((record.distanceMetersSnapshot ?: 0L) / 1000.0)} km")
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmploymentDropdown(employmentIds: List<EntityId>, selected: EntityId?, onSelect: (EntityId) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        OutlinedButton(onClick = { expanded = true }) { Text("Employment: " + (selected?.toString() ?: "Select")) }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            employmentIds.forEach { id -> DropdownMenuItem(text = { Text(id.toString()) }, onClick = { onSelect(id); expanded = false }) }
         }
     }
 }
