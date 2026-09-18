@@ -144,6 +144,9 @@ class ImportService(private val database: MatkahelpotinDatabase) {
         val employments = root["employments"]!!.jsonArray.map(::employment)
         val places = root["places"]!!.jsonArray.map(::place)
         val profiles = root["profiles"]!!.jsonArray.map(::profile)
+        requireUniqueIds(employments.map { it.id }, "employment")
+        requireUniqueIds(places.map { it.id }, "place")
+        requireUniqueIds(profiles.map { it.id }, "commute profile")
         val profileMap = profiles.associateBy { it.id }
         val placeMap = places.associateBy { it.id }
         return root["records"]!!.jsonArray.map {
@@ -162,12 +165,20 @@ class ImportService(private val database: MatkahelpotinDatabase) {
         val locations = root["businessLocations"]!!.jsonArray.map(::businessLocation)
         val routes = root["routes"]!!.jsonArray.map(::route)
         val trips = root["trips"]!!.jsonArray.map(::businessTrip)
-        val legs = root["legs"]!!.jsonArray.map(::leg).groupBy { it.businessTripId }
+        val allLegs = root["legs"]!!.jsonArray.map(::leg)
+        requireUniqueIds(employments.map { it.id }, "employment")
+        requireUniqueIds(places.map { it.id }, "place")
+        requireUniqueIds(locations.map { it.id }, "business location")
+        requireUniqueIds(routes.map { it.id }, "route")
+        requireUniqueIds(trips.map { it.id }, "business trip")
+        requireUniqueIds(allLegs.map { it.id }, "business trip leg")
+        val legs = allLegs.groupBy { it.businessTripId }
         val employmentMap = employments.associateBy { it.id }
         val placeMap = places.associateBy { it.id }
         return trips.map { trip ->
             val tripLegs = legs[trip.id] ?: error("Business trip has no legs")
             require(tripLegs.map { it.sequence }.distinct().size == tripLegs.size) { "Duplicate business-trip leg sequence" }
+            require(tripLegs.map { it.sequence } == (0 until tripLegs.size).toList()) { "Business-trip leg sequences must start at 0 and be contiguous" }
             require(employmentMap.containsKey(trip.employmentId)) { "Trip references missing employment" }
             tripLegs.forEach { l ->
                 if (l.fromPlaceId != null) require(placeMap.containsKey(l.fromPlaceId))
@@ -186,6 +197,10 @@ class ImportService(private val database: MatkahelpotinDatabase) {
     private fun route(o: JsonObject) = RouteEntity(UUID.fromString(o.req("id")), UUID.fromString(o.req("fromPlaceId")), UUID.fromString(o.req("toPlaceId")), o.reqLong("distanceMeters"), o.optLong("durationSeconds"), o.req("source"), o.opt("effectiveFrom")?.let(LocalDate::parse), o.opt("effectiveUntil")?.let(LocalDate::parse))
     private fun businessTrip(o: JsonObject) = BusinessTripEntity(UUID.fromString(o.req("id")), LocalDate.parse(o.req("date")), UUID.fromString(o.req("employmentId")), o.opt("purpose"), o.req("transportMode"), o.opt("reimbursementRateIdSnapshot")?.let(UUID::fromString), o.optLong("reimbursementRateCentsPerKmSnapshot"), o.opt("mileagePolicyIdSnapshot")?.let(UUID::fromString), o.optLong("mileageRateCentsPerKmSnapshot"), o.optLong("mileageLimitMetersSnapshot"), Instant.parse(o.req("createdAt")))
     private fun leg(o: JsonObject) = BusinessTripLegEntity(UUID.fromString(o.req("id")), UUID.fromString(o.req("businessTripId")), o.reqInt("sequence"), o.opt("fromPlaceId")?.let(UUID::fromString), o.opt("toPlaceId")?.let(UUID::fromString), o.opt("fromAddress"), o.opt("toAddress"), o.reqLong("distanceMeters"), o.req("distanceSource"), o.optLong("calculatedDistanceMeters"), o.opt("calculatedDistanceProvider"), o.optLong("manualDistanceOverrideMeters"), o.req("transportMode"))
+
+    private fun requireUniqueIds(ids: List<UUID>, kind: String) {
+        require(ids.distinct().size == ids.size) { "Duplicate $kind id" }
+    }
 
     private fun readFiles(bytes: ByteArray): Map<String, String> {
         val result = mutableMapOf<String, String>()
