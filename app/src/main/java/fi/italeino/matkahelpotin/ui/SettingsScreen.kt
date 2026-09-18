@@ -24,6 +24,14 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
     var mileageRate by remember { mutableStateOf("") }
     var mileageLimit by remember { mutableStateOf("") }
     var commuteMileageLimit by remember { mutableStateOf("") }
+    val profiles by viewModel.commuteProfiles.collectAsState()
+    var profileEmployment by remember { mutableStateOf<EntityId?>(null) }
+    var profileHome by remember { mutableStateOf<EntityId?>(null) }
+    var profileWork by remember { mutableStateOf<EntityId?>(null) }
+    var profileMode by remember { mutableStateOf(TransportMode.PRIVATE_CAR) }
+    var profileDistance by remember { mutableStateOf("") }
+    var profileTicket by remember { mutableStateOf("") }
+    var profileTrips by remember { mutableStateOf("2") }
 
     Scaffold(topBar = { TopAppBar(title = { Text("Matkahelpotin") }) }) { padding ->
         LazyColumn(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -43,6 +51,31 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             item {
                 OutlinedTextField(vehicle, { vehicle = it }, label = { Text("Vehicle") }, modifier = Modifier.fillMaxWidth())
                 Button(onClick = { viewModel.addVehicle(vehicle, null); vehicle = "" }) { Text("Add vehicle") }
+            }
+
+            item {
+                Text("Commute profile configuration", style = MaterialTheme.typography.titleMedium)
+                val homes = places.filter { it.type == PlaceType.HOME }
+                val workplaces = places.filter { it.type == PlaceType.WORKPLACE }
+                if (employments.isEmpty() || homes.isEmpty() || workplaces.isEmpty()) {
+                    Text("Add an employment, a home and a workplace first.")
+                } else {
+                    DropdownField("Employment", employments.firstOrNull { it.id == profileEmployment }?.employerName ?: "Select", employments.map { it.id to it.employerName }) { profileEmployment = it }
+                    DropdownField("Home", homes.firstOrNull { it.id == profileHome }?.name ?: "Select", homes.map { it.id to it.name }) { profileHome = it }
+                    DropdownField("Workplace", workplaces.firstOrNull { it.id == profileWork }?.name ?: "Select", workplaces.map { it.id to it.name }) { profileWork = it }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(profileMode == TransportMode.PRIVATE_CAR, { profileMode = TransportMode.PRIVATE_CAR }, label = { Text("Private car") })
+                        FilterChip(profileMode == TransportMode.PUBLIC_TRANSPORT, { profileMode = TransportMode.PUBLIC_TRANSPORT }, label = { Text("Public transport") })
+                    }
+                    OutlinedTextField(profileDistance, { profileDistance = it }, label = { Text("One-way distance (km)") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(profileTicket, { profileTicket = it }, label = { Text("Ticket price (€/day)") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(profileTrips, { profileTrips = it }, label = { Text("Trips per day") }, modifier = Modifier.fillMaxWidth())
+                    Button(onClick = {
+                        if (profileEmployment != null && profileHome != null && profileWork != null) {
+                            viewModel.addCommuteProfile(profileEmployment!!, profileHome!!, profileWork!!, profileMode, profileDistance, profileTicket, profileTrips)
+                        }
+                    }) { Text("Add commute profile") }
+                }
             }
             item { HorizontalDivider() }            item {
                 Text("Reimbursement and mileage policy", style = MaterialTheme.typography.titleMedium)
