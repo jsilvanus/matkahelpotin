@@ -154,14 +154,14 @@ private fun BusinessHistory(
             val tripLegs = legs.filter { it.businessTripId == trip.id }.sortedBy { it.sequence }
             val distance = tripLegs.sumOf { it.distanceMeters } / 1000.0
             val path = tripLegs.joinToString(" → ") { leg -> placeNames[leg.fromPlaceId] ?: leg.fromAddress ?: "?" } +
-                (tripLegs.lastOrNull()?.let { " → @@{placeNames[it.toPlaceId] ?: it.toAddress ?: "?"}" } ?: "")
+                (tripLegs.lastOrNull()?.let { " → ${placeNames[it.toPlaceId] ?: it.toAddress ?: "?"}" } ?: "")
             val provenance = tripLegs.joinToString(" + ") { leg ->
                 when (leg.distanceSource) {
                     DistanceSource.EMPLOYER_DEFINED -> "employer"
                     DistanceSource.ROUTING_PROVIDER -> leg.calculatedDistanceProvider ?: "routing"
                     DistanceSource.MANUAL_OVERRIDE -> {
                         val provider = leg.calculatedDistanceProvider
-                        if (provider == null) "manual" else "manual · @@{provider}"
+                        if (provider == null) "manual" else "manual · ${provider}"
                     }
                 }
             }
@@ -169,8 +169,8 @@ private fun BusinessHistory(
                 headlineContent = { Text(trip.date.toString()) },
                 supportingContent = {
                     Column {
-                        Text("@@{path} · @@{"%.1f".format(distance)} km")
-                        Text("Distance: @@{provenance}", style = MaterialTheme.typography.bodySmall)
+                        Text("${path} · ${"%.1f".format(distance)} km")
+                        Text("Distance: ${provenance}", style = MaterialTheme.typography.bodySmall)
                     }
                 },
                 trailingContent = {
@@ -195,8 +195,8 @@ private fun BusinessHistory(
             title = { Text("Edit distance") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Original: @@{"%.1f".format((leg.calculatedDistanceMeters ?: leg.distanceMeters) / 1000.0)} km")
-                    leg.calculatedDistanceProvider?.let { Text("Routing provider: @@{it}") }
+                    Text("Original: ${"%.1f".format((leg.calculatedDistanceMeters ?: leg.distanceMeters) / 1000.0)} km")
+                    leg.calculatedDistanceProvider?.let { Text("Routing provider: ${it}") }
                     OutlinedTextField(
                         value = editingDistance,
                         onValueChange = { editingDistance = it },
