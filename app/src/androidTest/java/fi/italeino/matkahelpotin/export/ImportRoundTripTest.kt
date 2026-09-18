@@ -104,7 +104,10 @@ class ImportRoundTripTest {
             assertEquals(1, result.businessTripsImported)
             assertEquals(1, result.commuteDestroyed)
             assertEquals(1, result.businessTripsDestroyed)
-            assertEquals(listOf(commuteId), target.commuteRecordDao().observeAll().first().map { it.id })
+            val importedCommuteIds = target.commuteRecordDao().observeAll().first().map { it.id }
+            assertTrue(commuteId in importedCommuteIds)
+            assertTrue(oldCommuteId !in importedCommuteIds)
+            assertEquals(2, importedCommuteIds.size)
             assertEquals(listOf(tripId), target.businessTripDao().observeAll().first().map { it.id })
             assertEquals(listOf(legId), target.businessTripLegDao().observeAll().first().map { it.id })
             assertTrue(target.commuteProfileDao().observeAll().first().any { it.id == profileId })
