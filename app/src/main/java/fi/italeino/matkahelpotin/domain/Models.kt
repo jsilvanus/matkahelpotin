@@ -148,7 +148,18 @@ data class MileagePolicy(
     val mileageLimitMeters: Long? = null,
     val mileageRateCentsPerKm: Long,
     val jurisdiction: String = "FI",
-)
+    val validFrom: LocalDate = LocalDate.of(year, 1, 1),
+    val validUntil: LocalDate? = null,
+) {
+    init {
+        require(year >= 2000) { "Mileage policy year must be valid" }
+        require(mileageRateCentsPerKm >= 0) { "Mileage rate cannot be negative" }
+        require(mileageLimitMeters == null || mileageLimitMeters >= 0) { "Mileage limit cannot be negative" }
+        require(validFrom.year == year) { "Mileage policy validFrom must belong to its policy year" }
+        require(validUntil == null || validUntil.isAfter(validFrom)) { "Mileage policy validUntil must be after validFrom" }
+        require(validUntil == null || validUntil.year <= year + 1) { "Mileage policy cannot extend beyond the following year" }
+    }
+}
 
 fun validateCommuteProfile(profile: CommuteProfile) {
     require(profile.tripsPerDay > 0) { "tripsPerDay must be positive" }
@@ -264,7 +275,24 @@ fun selectReimbursementRate(rates: List<ReimbursementRate>, date: LocalDate, typ
         .maxByOrNull { it.validFrom }
 
 fun selectMileagePolicy(policies: List<MileagePolicy>, date: LocalDate, jurisdiction: String = "FI"): MileagePolicy? =
-    policies.filter { it.jurisdiction == jurisdiction && it.year == date.year }.maxByOrNull { it.id }
+    policies
+        .filter {
+            it.jurisdiction == jurisdiction &&
+                !date.isBefore(it.validFrom) &&
+                (it.validUntil == null || date.isBefore(it.validUntil))
+        }
+        .maxWithOrNull(compareBy<MileagePolicy> { it.validFrom }.thenBy { it.id.toString() })
+
+fun selectAnnualMileagePolicy(
+    policies: List<MileagePolicy>,
+    year: Int,
+    asOf: LocalDate,
+    jurisdiction: String = "FI",
+): MileagePolicy? {
+    require(asOf.year == year || asOf.year == year + 1) { "asOf must be within the policy year or its following year" }
+    return selectMileagePolicy(policies, asOf.coerceAtMost(LocalDate.of(year, 12, 31)), jurisdiction)
+        ?.takeIf { it.year == year }
+}
 
 fun BusinessTrip.withPolicySnapshot(reimbursementRate: ReimbursementRate?, mileagePolicy: MileagePolicy?): BusinessTrip {
     if (transportMode != TransportMode.PRIVATE_CAR) return this
@@ -284,8 +312,10 @@ fun calculateReimbursementCents(distanceMeters: Long, rateCentsPerKm: Long): Lon
 }
 
 fun calculateBusinessTripReimbursementCents(trip: BusinessTrip, legs: List<BusinessTripLeg>): Long? {
+    if (trip.transportMode != TransportMode.PRIVATE_CAR) return null
     val rate = trip.reimbursementRateCentsPerKmSnapshot ?: return null
-    return calculateReimbursementCents(legs.filter { it.businessTripId == trip.id }.sumOf { it.distanceMeters }, rate)
+    val distance = legs.filter { it.businessTripId == trip.id }.sumOf { it.distanceMeters }
+    return calculateReimbursementCents(distance, rate)
 }
 
 
@@ -295,8 +325,13 @@ fun calculateAnnualMileageMeters(
     year: Int,
     employmentId: EntityId? = null,
 ): Long =
-    trips.filter { it.date.year == year && (employmentId == null || it.employmentId == employmentId) }
-        .sumOf { trip -> legs.filter { it.businessTripId == trip.id }.sumOf { it.distanceMeters } }
+    trips.filter {
+        it.date.year == year &&
+            it.transportMode == TransportMode.PRIVATE_CAR &&
+            (employmentId == null || it.employmentId == employmentId)
+    }.sumOf { trip ->
+        legs.filter { it.businessTripId == trip.id }.sumOf { it.distanceMeters }
+    }
 
 fun remainingMileageMeters(
     annualMileageMeters: Long,
