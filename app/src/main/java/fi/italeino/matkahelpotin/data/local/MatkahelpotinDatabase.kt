@@ -9,7 +9,7 @@ import androidx.room.TypeConverters
         CommuteProfileEntity::class, CommuteRecordEntity::class, BusinessLocationEntity::class,
         RouteEntity::class, BusinessTripEntity::class, BusinessTripLegEntity::class,
         VehicleEntity::class, ReimbursementRateEntity::class, MileagePolicyEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
