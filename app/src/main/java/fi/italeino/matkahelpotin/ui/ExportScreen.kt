@@ -145,7 +145,7 @@ private fun nextAction(action: ImportAction) = when (action) {
     ImportAction.DESTROY -> ImportAction.NONE
     ImportAction.NONE -> ImportAction.ADD
 }
-private fun ImportViewModel.isBusy(): Boolean = false
+private fun ImportViewModel.isBusy(): Boolean = state.value.busy
 
 @Composable
 private fun ImportDayCell(date: LocalDate, action: ImportAction, imported: Boolean, existing: Boolean, onClick: () -> Unit, onLongClick: () -> Unit) {
