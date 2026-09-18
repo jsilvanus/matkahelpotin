@@ -18,9 +18,9 @@ fun ExportScreen(viewModel: ExportViewModel) {
     var commute by remember { mutableStateOf(true) }
     var business by remember { mutableStateOf(true) }
     val state by viewModel.state.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
         if (uri != null && state.data != null) {
-            val context = androidx.compose.ui.platform.LocalContext.current
             context.contentResolver.openOutputStream(uri)?.use { it.write(state.data) }
             viewModel.clear()
         }
