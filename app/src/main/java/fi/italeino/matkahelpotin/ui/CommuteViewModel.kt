@@ -12,9 +12,11 @@ import java.util.UUID
 class CommuteViewModel(
     private val profileRepository: CommuteProfileRepository,
     private val recordRepository: CommuteRecordRepository,
+    private val mileagePolicyRepository: MileagePolicyRepository,
 ) : ViewModel() {
     val profiles: Flow<List<CommuteProfile>> = profileRepository.observeAll()
     val records: Flow<List<CommuteRecord>> = recordRepository.observeAll()
+    val mileagePolicies: Flow<List<MileagePolicy>> = mileagePolicyRepository.observeAll()
 
     fun cycleDay(date: LocalDate) {
         viewModelScope.launch {
