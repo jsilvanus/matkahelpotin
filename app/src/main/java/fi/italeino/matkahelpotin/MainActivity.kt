@@ -38,7 +38,7 @@ class MainActivity : ComponentActivity() {
                             }))
                             1 -> BusinessScreen(viewModel(factory = BusinessViewModel.factory(app)))
                             2 -> SettingsScreen(viewModel(factory = SettingsViewModel.factory(app)))
-                            else -> ExportScreen(viewModel(factory = fi.italeino.matkahelpotin.export.ExportViewModel.factory(app)))
+                            else -> ExportScreen(\n                                viewModel(factory = fi.italeino.matkahelpotin.export.ExportViewModel.factory(app)),\n                                viewModel(factory = fi.italeino.matkahelpotin.export.ImportViewModel.factory(app))\n                            )
                         }
                     }
                 }
